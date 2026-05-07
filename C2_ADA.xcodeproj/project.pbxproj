@@ -16,8 +16,24 @@
 			membershipExceptions = (
 				Actions.sks,
 				Assets.xcassets,
+				Components/InputIntentComponent.swift,
+				Components/LaunchComponent.swift,
+				Components/MovementComponent.swift,
+				Components/NodeComponent.swift,
+				Components/RideAttachmentComponent.swift,
+				Entities/PlayerEntity.swift,
+				Entities/VehicleEntity.swift,
 				GameScene.sks,
 				GameScene.swift,
+				Models/GameConfiguration.swift,
+				Models/GameFlowState.swift,
+				Models/InputPhase.swift,
+				Support/IsometricProjector.swift,
+				Support/ZPosition.swift,
+				Systems/InputSystem.swift,
+				Systems/LatchSystem.swift,
+				Systems/LaunchSystem.swift,
+				Systems/MovementSystem.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
 		};
@@ -172,7 +188,7 @@
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -206,7 +222,7 @@
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
