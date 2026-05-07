@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Xcode
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
@@ -60,3 +61,62 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+=======
+# --------------------------------------------------
+# macOS metadata
+# --------------------------------------------------
+.DS_Store
+
+# --------------------------------------------------
+# Xcode user-specific files
+# Local UI state, breakpoints, and personal settings.
+# Do not share these in Git.
+# --------------------------------------------------
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.xcdebugger
+
+# User-specific data inside Xcode project/workspace bundles
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# --------------------------------------------------
+# Build output
+# Generated locally by Xcode.
+# --------------------------------------------------
+build/
+DerivedData/
+
+# --------------------------------------------------
+# App archives and debug symbol artifacts
+# --------------------------------------------------
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# --------------------------------------------------
+# Swift Playgrounds
+# --------------------------------------------------
+timeline.xctimeline
+playground.xcworkspace
+
+# --------------------------------------------------
+# Fastlane generated artifacts
+# --------------------------------------------------
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# --------------------------------------------------
+# Editor / temporary files
+# --------------------------------------------------
+*.swp
+*.lock
+
+GEMINI.md
+.geminiignore
+*.md
+>>>>>>> 65059ce (feat: initial setup)
