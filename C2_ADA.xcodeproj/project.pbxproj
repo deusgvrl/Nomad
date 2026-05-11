@@ -7,21 +7,19 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		4FF7333C2FAC93D000E2CC60 /* C2_ADA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = C2_ADA.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FF7333C2FAC93D000E2CC60 /* C2_ADA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = C2_ADA.app; path = "/Users/itsdeus/Documents/Project/C2_ADA/build/Debug-iphoneos/C2_ADA.app"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		4FF7334D2FAC93D000E2CC60 /* Exceptions for "C2_ADA Shared" folder in "C2_ADA iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Actions.sks,
-				Assets.xcassets,
-				GameScene.sks,
-				GameScene.swift,
+				Resources/Assets.xcassets,
+				UI/Scene/GameScene.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
 		};
-		4FF733512FAC93D000E2CC60 /* Exceptions for "C2_ADA iOS" folder in "C2_ADA iOS" target */ = {
+		4FF733512FAC93D000E2CC60 /* Exceptions for "iOS App" folder in "C2_ADA iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -39,12 +37,12 @@
 			path = "C2_ADA Shared";
 			sourceTree = "<group>";
 		};
-		4FF7333E2FAC93D000E2CC60 /* C2_ADA iOS */ = {
+		4FF7333E2FAC93D000E2CC60 /* iOS App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4FF733512FAC93D000E2CC60 /* Exceptions for "C2_ADA iOS" folder in "C2_ADA iOS" target */,
+				4FF733512FAC93D000E2CC60 /* Exceptions for "iOS App" folder in "C2_ADA iOS" target */,
 			);
-			path = "C2_ADA iOS";
+			path = "iOS App";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -64,17 +62,8 @@
 			isa = PBXGroup;
 			children = (
 				4FF733332FAC93CF00E2CC60 /* C2_ADA Shared */,
-				4FF7333E2FAC93D000E2CC60 /* C2_ADA iOS */,
-				4FF7333D2FAC93D000E2CC60 /* Products */,
+				4FF7333E2FAC93D000E2CC60 /* iOS App */,
 			);
-			sourceTree = "<group>";
-		};
-		4FF7333D2FAC93D000E2CC60 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				4FF7333C2FAC93D000E2CC60 /* C2_ADA.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -93,7 +82,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4FF7333E2FAC93D000E2CC60 /* C2_ADA iOS */,
+				4FF7333E2FAC93D000E2CC60 /* iOS App */,
 			);
 			name = "C2_ADA iOS";
 			packageProductDependencies = (
@@ -127,7 +116,7 @@
 			mainGroup = 4FF7332E2FAC93CF00E2CC60;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 4FF7333D2FAC93D000E2CC60 /* Products */;
+			productRefGroup = 4FF7332E2FAC93CF00E2CC60;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
