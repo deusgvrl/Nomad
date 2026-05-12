@@ -26,19 +26,16 @@ class SpawnSystem {
     private var rowEntities: [GKEntity] = []
     private var rowNodes: [RowNode] = []
     
-    
     // MARK: - Grid Configuration
     
     // Jumlah row dan kolom aktif
     private let totalRows: Int = 25
     private let colCount: Int = 20
     
-    
     // MARK: - Movement
     
     // Kecepatan movement row
     private let moveSpeed: CGFloat = 150
-    
     
     // MARK: - Obstacle
     
@@ -57,7 +54,6 @@ class SpawnSystem {
     // Mencegah pola obstacle monoton
     private var lastObstacleSum: Int = -1
     
-    
     // MARK: - Initialization
     
     init(worldNode: SKNode, sceneSize: CGSize) {
@@ -67,7 +63,6 @@ class SpawnSystem {
         setupInitialRows()
     }
 }
-
 
 // MARK: - Initial Setup
 
@@ -89,13 +84,11 @@ extension SpawnSystem {
             
             entity.addComponent(movementComponent)
             
-            
             // Visual row
             let rowNode = RowNode(
                 rowIndex: 0,
                 colCount: colCount
             )
-            
             
             // Posisi diagonal isometric
             rowNode.position = CGPoint(
@@ -105,14 +98,12 @@ extension SpawnSystem {
             
             worldNode.addChild(rowNode)
             
-            
             // Simpan data
             rowEntities.append(entity)
             rowNodes.append(rowNode)
         }
     }
 }
-
 
 // MARK: - Update Loop
 
@@ -135,7 +126,6 @@ extension SpawnSystem {
     }
 }
 
-
 // MARK: - Row Movement
 
 extension SpawnSystem {
@@ -143,7 +133,6 @@ extension SpawnSystem {
     private func moveRows(deltaTime: TimeInterval) {
         
         for (index, entity) in rowEntities.enumerated() {
-            
             guard let movementComponent =
                     entity.component(ofType: MovementComponent.self)
             else {
@@ -171,7 +160,6 @@ extension SpawnSystem {
     }
 }
 
-
 // MARK: - Row Recycling
 
 extension SpawnSystem {
@@ -191,22 +179,18 @@ extension SpawnSystem {
             let tileWidth = IsometricHelper.tileWidth
             let tileHeight = IsometricHelper.tileHeight
             
-            
             // Pindahkan row ke posisi paling atas
             firstRow.position = CGPoint(
                 x: lastRow.position.x + (tileWidth / 2),
                 y: lastRow.position.y + (tileHeight / 2)
             )
             
-            
             // Hapus obstacle lama
             firstRow.childNode(withName: "obstacle")?
                 .removeFromParent()
             
-            
             // Spawn obstacle baru
             trySpawnObstacle(on: firstRow)
-            
             
             // Update urutan queue
             rowNodes.removeFirst()
@@ -218,7 +202,6 @@ extension SpawnSystem {
     }
 }
 
-
 // MARK: - Obstacle Spawn
 
 extension SpawnSystem {
@@ -227,39 +210,31 @@ extension SpawnSystem {
         
         rowsSinceLastObstacle += 1
         
-        
         // Pastikan ada jarak aman antar obstacle
         if rowsSinceLastObstacle >= minSafeRows {
-            
             
             // Random chance obstacle spawn
             if Double.random(in: 0...1) < spawnChance {
                 
-                
                 // Area spawn aman
                 let allowedCols = Array(4...(colCount - 5)).filter { col in
-                    
                     
                     // Hindari obstacle terlalu dekat
                     let isFarEnough =
                         abs(col - lastObstacleCol) >= 3
                     
-                    
                     // Hindari pola obstacle monoton
                     let isDifferentPattern =
                         (rowNode.rowIndex + col) != lastObstacleSum
                     
-                    
                     return isFarEnough && isDifferentPattern
                 }
-                
                 
                 // Ambil kolom random valid
                 if let randomCol = allowedCols.randomElement() {
                     
                     let randomType =
                         ObstacleType.allCases.randomElement() ?? .small
-                    
                     
                     // Membuat obstacle
                     let obstacle = ObstacleNode(type: randomType)
@@ -276,12 +251,10 @@ extension SpawnSystem {
                     
                     rowNode.addChild(obstacle)
                     
-                    
                     // Simpan histori obstacle
                     lastObstacleCol = randomCol
                     lastObstacleSum = rowNode.rowIndex + randomCol
                 }
-                
                 
                 // Reset counter obstacle
                 rowsSinceLastObstacle = 0
