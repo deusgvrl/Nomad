@@ -7,14 +7,17 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		4FF7333C2FAC93D000E2CC60 /* C2_ADA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = C2_ADA.app; path = "/Users/itsdeus/Documents/Project/C2_ADA/build/Debug-iphoneos/C2_ADA.app"; sourceTree = "<absolute>"; };
+		DAC4D1E22FB2378200C5E9F7 /* C2_ADA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = C2_ADA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		4FF7334D2FAC93D000E2CC60 /* Exceptions for "C2_ADA Shared" folder in "C2_ADA iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				ECS/Helper/IsometricHelper.swift,
 				Resources/Assets.xcassets,
+				UI/Node/FloorNode.swift,
+				UI/Node/RowNode.swift,
 				UI/Scene/GameScene.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
@@ -63,6 +66,7 @@
 			children = (
 				4FF733332FAC93CF00E2CC60 /* C2_ADA Shared */,
 				4FF7333E2FAC93D000E2CC60 /* iOS App */,
+				DAC4D1E22FB2378200C5E9F7 /* C2_ADA.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -88,7 +92,7 @@
 			packageProductDependencies = (
 			);
 			productName = "C2_ADA iOS";
-			productReference = 4FF7333C2FAC93D000E2CC60 /* C2_ADA.app */;
+			productReference = DAC4D1E22FB2378200C5E9F7 /* C2_ADA.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -153,9 +157,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SB586Q784K;
+				DEVELOPMENT_TEAM = AGBD4P9452;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "C2_ADA iOS/Info.plist";
+				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
@@ -187,9 +191,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SB586Q784K;
+				DEVELOPMENT_TEAM = AGBD4P9452;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "C2_ADA iOS/Info.plist";
+				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
