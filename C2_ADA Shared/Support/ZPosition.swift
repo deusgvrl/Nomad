@@ -7,11 +7,22 @@
 
 import CoreGraphics
 
+// MARK: - Z Position
+
+/// Shared SpriteKit draw layers.
+///
+/// Higher numbers render above lower numbers. Keeping them here avoids random
+/// zPosition values throughout the scene.
 enum ZPosition {
+    // MARK: - World Layers
+
     static let floor: CGFloat = 10
     static let vehicle: CGFloat = 40
     static let obstacle: CGFloat = 45
     static let player: CGFloat = 50
+
+    // MARK: - UI Layers
+
     static let overlay: CGFloat = 100
     static let gameOverOverlay: CGFloat = 200
 }

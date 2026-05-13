@@ -16,24 +16,32 @@
 			membershipExceptions = (
 				Actions.sks,
 				Assets.xcassets,
-				Components/InputIntentComponent.swift,
-				Components/LaunchComponent.swift,
-				Components/MovementComponent.swift,
-				Components/NodeComponent.swift,
-				Components/RideAttachmentComponent.swift,
-				Entities/PlayerEntity.swift,
-				Entities/VehicleEntity.swift,
+				ECS/Components/InputIntentComponent.swift,
+				ECS/Components/LaunchComponent.swift,
+				ECS/Components/MovementComponent.swift,
+				ECS/Components/NodeComponent.swift,
+				ECS/Components/RideAttachmentComponent.swift,
+				ECS/Entities/PlayerEntity.swift,
+				ECS/Entities/VehicleEntity.swift,
+				ECS/Systems/InputSystem.swift,
+				ECS/Systems/LatchSystem.swift,
+				ECS/Systems/LaunchSystem.swift,
+				ECS/Systems/MovementSystem.swift,
 				GameScene.sks,
 				GameScene.swift,
-				Models/GameConfiguration.swift,
-				Models/GameFlowState.swift,
-				Models/InputPhase.swift,
+				Helper/EntityKind.swift,
+				Helper/GameConfiguration.swift,
+				Helper/GameplayRule.swift,
+				Helper/InputPhase.swift,
+				Helper/NomadAsset.swift,
+				State/GameState.swift,
+				State/ObstacleState.swift,
+				State/PlayerState.swift,
+				State/ScreenState.swift,
+				State/StateMachine.swift,
+				State/VehicleState.swift,
 				Support/IsometricProjector.swift,
 				Support/ZPosition.swift,
-				Systems/InputSystem.swift,
-				Systems/LatchSystem.swift,
-				Systems/LaunchSystem.swift,
-				Systems/MovementSystem.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
 		};
@@ -180,7 +188,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SB586Q784K;
+				DEVELOPMENT_TEAM = M7YC437JCH;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "C2_ADA iOS/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -214,7 +222,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SB586Q784K;
+				DEVELOPMENT_TEAM = M7YC437JCH;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "C2_ADA iOS/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

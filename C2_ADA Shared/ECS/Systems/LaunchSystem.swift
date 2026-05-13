@@ -10,12 +10,23 @@ import Foundation
 import GameplayKit
 import SpriteKit
 
+// MARK: - Launch System
+
+/// Handles the player's jump arc after release.
+///
+/// The player detaches from the car, moves forward in the isometric direction,
+/// and falls under gravity. If the y position drops below the ground line, this
+/// system reports `.fell`; `GameScene` decides what to do with that result.
 final class LaunchSystem {
+
+    // MARK: - Update Result
 
     enum UpdateResult {
         case airborne
         case fell
     }
+
+    // MARK: - Dependencies
 
     private let configuration: GameConfiguration
 
@@ -23,16 +34,18 @@ final class LaunchSystem {
         self.configuration = configuration
     }
 
-    func launch(player: PlayerEntity, toward vehicle: VehicleEntity?) {
+    // MARK: - Launch Start
+
+    func launch(player: PlayerEntity) {
         player.detachFromVehicle()
-        let targetXPosition = vehicle?.node.position.x ?? player.node.position.x
-        let horizontalVelocity = (targetXPosition - player.node.position.x) / CGFloat(configuration.jumpTravelDuration)
         player.component(ofType: LaunchComponent.self)?.launch(
             from: player.node.position,
-            horizontalVelocity: horizontalVelocity,
+            horizontalVelocity: launchForwardXVelocity,
             verticalVelocity: configuration.launchVelocity
         )
     }
+
+    // MARK: - Launch Update
 
     func update(player: PlayerEntity, deltaTime: TimeInterval) -> UpdateResult {
         guard let launchComponent = player.component(ofType: LaunchComponent.self),
@@ -47,5 +60,12 @@ final class LaunchSystem {
         player.node.position = position
 
         return position.y <= configuration.groundYPosition ? .fell : .airborne
+    }
+
+    // MARK: - Isometric Forward Motion
+
+    private var launchForwardXVelocity: CGFloat {
+        let radians = Double(configuration.launchForwardAngleInDegrees) * Double.pi / 180
+        return configuration.launchVelocity / CGFloat(tan(radians))
     }
 }

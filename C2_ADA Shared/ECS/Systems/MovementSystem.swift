@@ -8,11 +8,21 @@
 import CoreGraphics
 import GameplayKit
 
+// MARK: - Movement System
+
+/// Applies riding movement to both the vehicle and the attached player.
+///
+/// This system only moves while the player is riding. GameScene decides when
+/// movement is allowed; this system only performs the movement.
 final class MovementSystem {
+
+    // MARK: - Steering Lifecycle
 
     func beginSteering(vehicle: VehicleEntity, at location: CGPoint) {
         vehicle.component(ofType: MovementComponent.self)?.beginDrag(at: location)
     }
+
+    // MARK: - Riding Movement
 
     func updateVehicleAndRider(vehicle: VehicleEntity, player: PlayerEntity, inputPhase: InputPhase) {
         guard case .dragging(_, _, let translation) = inputPhase,
@@ -20,10 +30,14 @@ final class MovementSystem {
             return
         }
 
-        let targetXPosition = movementComponent.applyDragTranslation(translation)
-        vehicle.setXPosition(targetXPosition)
+        // The vehicle calculates its road-width position; the player then follows
+        // with its configured ride offset.
+        let targetPosition = movementComponent.applyDragTranslation(translation)
+        vehicle.setPosition(targetPosition)
         player.place(on: vehicle)
     }
+
+    // MARK: - Steering End
 
     func endSteering(vehicle: VehicleEntity) {
         vehicle.component(ofType: MovementComponent.self)?.endDrag()

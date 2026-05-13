@@ -8,11 +8,24 @@
 import GameplayKit
 import SpriteKit
 
+// MARK: - Player Entity
+
+/// The player ECS entity.
+///
+/// Right now the player is represented by a red placeholder circle. Later, this
+/// entity can swap that node for real player sprites without changing the input,
+/// movement, or launch systems.
 final class PlayerEntity: GKEntity {
+
+    // MARK: - SpriteKit Node
 
     let node: SKNode
 
+    // MARK: - Placement Tuning
+
     private let rideOffset: CGVector
+
+    // MARK: - Initialization
 
     init(configuration: GameConfiguration) {
         self.rideOffset = configuration.playerRideOffset
@@ -30,9 +43,13 @@ final class PlayerEntity: GKEntity {
         addComponent(LaunchComponent())
     }
 
+    // MARK: - Required Coder Initializer
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    // MARK: - Riding State
 
     func attach(to vehicle: VehicleEntity) {
         component(ofType: RideAttachmentComponent.self)?.attach(to: vehicle)
@@ -40,20 +57,32 @@ final class PlayerEntity: GKEntity {
         place(on: vehicle)
     }
 
+    // MARK: - Input State
+
     func recordInput(_ inputPhase: InputPhase) {
         component(ofType: InputIntentComponent.self)?.updatePhase(inputPhase)
     }
+
+    // MARK: - Detach
 
     func detachFromVehicle() {
         component(ofType: RideAttachmentComponent.self)?.detach()
     }
 
+    // MARK: - Positioning
+
+    /// Places the player marker on top of the current vehicle.
+    ///
+    /// The offset is named in `GameConfiguration` so asset placement can be tuned
+    /// later when the real player and vehicle sprites arrive.
     func place(on vehicle: VehicleEntity) {
         node.position = CGPoint(
             x: vehicle.node.position.x + rideOffset.dx,
             y: vehicle.node.position.y + rideOffset.dy
         )
     }
+
+    // MARK: - Placeholder Art
 
     private static func makePlayerNode(configuration: GameConfiguration) -> SKNode {
         let playerNode = SKNode()
