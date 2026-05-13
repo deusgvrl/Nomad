@@ -9,7 +9,7 @@ import Foundation
 import SpriteKit
 
 class RowNode: SKNode {
-    let rowIndex: Int //index baris ke berapa
+    var rowIndex: Int //index baris ke berapa
     let colCount: Int //berapa tile per baris
     
     init(rowIndex: Int, colCount: Int) {
