@@ -21,7 +21,13 @@ class ObstacleNode: SKSpriteNode {
         let texture = SKTexture(imageNamed: type.rawValue)
         
         // Gunakan ukuran tile dari IsometricHelper agar pas
-        let tileSize = CGSize(width: IsometricHelper.tileWidth, height: IsometricHelper.tileHeight)
+        let scale: CGFloat = 1.5
+
+        let tileSize = CGSize(
+            width: IsometricHelper.tileWidth * scale,
+            height: IsometricHelper.tileHeight * scale
+        )
+
         super.init(texture: texture, color: .clear, size: tileSize)
         
         self.name = "obstacle"

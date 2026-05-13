@@ -43,10 +43,10 @@ class SpawnSystem {
     private var rowsSinceLastObstacle: Int = 0
     
     // Minimal row aman
-    private let minSafeRows = 4
+    private let minSafeRows = 5
     
     // Peluang obstacle spawn
-    private let spawnChance = 0.6
+    private let spawnChance = 0.7
     
     // Menyimpan posisi obstacle sebelumnya
     private var lastObstacleCol: Int = -1
