@@ -15,12 +15,14 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				ECS/Component/MovementComponent.swift,
+				ECS/Entity/RowEntity.swift,
 				ECS/Helper/IsometricHelper.swift,
 				ECS/System/SpawnSystem.swift,
 				Resources/Assets.xcassets,
 				UI/Node/FloorNode.swift,
 				UI/Node/ObstacleNode.swift,
 				UI/Node/RowNode.swift,
+				UI/Node/VehicleNode.swift,
 				UI/Scene/GameScene.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
