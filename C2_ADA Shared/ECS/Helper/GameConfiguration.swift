@@ -45,11 +45,11 @@ struct GameConfiguration {
             CGPoint(x: 130, y: -20),
             CGPoint(x: -95, y: -360)
         ],
-        // The imported car image has transparent padding, so the node is sized
-        // slightly larger than the visible car in the hi-fi prototype.
-        playerRideOffset: CGVector(dx: -10, dy: 6),
-        vehicleSize: CGSize(width: 124, height: 124),
-        playerSize: CGSize(width: 40, height: 64),
+        // The car is back to the earlier movement-prototype size, while the
+        // player is larger so the rider reads clearly on top of the vehicle.
+        playerRideOffset: CGVector(dx: -12, dy: 6),
+        vehicleSize: CGSize(width: 104, height: 104),
+        playerSize: CGSize(width: 52, height: 84),
         obstacleSize: CGSize(width: 36, height: 92),
         launchForwardAngleInDegrees: 60,
         launchVelocity: 360,

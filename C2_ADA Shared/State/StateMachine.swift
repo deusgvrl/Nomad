@@ -8,7 +8,7 @@
 // MARK: - State Transition
 
 /// Describes one allowed move from one state to another.
-struct StateTransition<State: Hashable>: Hashable {
+nonisolated struct StateTransition<State: Hashable>: Hashable {
     let from: State
     let to: State
 }
@@ -19,7 +19,7 @@ struct StateTransition<State: Hashable>: Hashable {
 ///
 /// If `allowedTransitions` is empty, every transition is allowed. If it has
 /// values, `transition(to:)` succeeds only when the pair exists in the set.
-final class StateMachine<State: Hashable> {
+nonisolated final class StateMachine<State: Hashable> {
 
     // MARK: - Stored State
 
