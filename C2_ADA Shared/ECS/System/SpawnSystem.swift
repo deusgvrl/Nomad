@@ -14,7 +14,7 @@ import GameplayKit
 /// - Recycling row
 /// - Spawn obstacle dan vehicle
 class SpawnSystem {
-    
+
     // MARK: - Core Properties
     
     /// Parent node tempat seluruh row ditampilkan
@@ -32,7 +32,7 @@ class SpawnSystem {
     
     /// Menyimpan visual row yang tampil di scene
     private var rowNodes: [RowNode] = []
-    
+
     // MARK: - Grid Configuration
     
     /// Total row aktif yang dirender
@@ -40,12 +40,12 @@ class SpawnSystem {
     
     /// Total kolom tile dalam satu row
     private let colCount: Int = 20
-    
+
     // MARK: - Movement
     
     /// Kecepatan movement diagonal row
     private let moveSpeed: CGFloat = 150
-    
+
     // MARK: - Obstacle
     
     /// Menghitung jumlah row sejak obstacle terakhir spawn
@@ -95,7 +95,16 @@ class SpawnSystem {
     /// Agar tetap dapat dijangkau player
     private let maxColJumpRange: Int = 4
     
-    // MARK: - Initialization
+    // MARK: - Wall Data
+    private let totalWallChunks = 12
+    private var leftWallEntities: [WallEntity] = []
+    private var leftWallNodes: [WallNode] = []
+    private var rightWallEntities: [WallEntity] = []
+    private var rightWallNodes: [WallNode] = []
+    
+    // Jarak sambungan antar chunk (Dibuat lebih rapat agar overlap)
+    private let chunkOffsetX:CGFloat = 176
+    private let chunkOffsetY:CGFloat = 304
     
     /// Inisialisasi sistem spawn
     ///
@@ -105,8 +114,9 @@ class SpawnSystem {
     init(worldNode: SKNode, sceneSize: CGSize) {
         self.worldNode = worldNode
         self.sceneSize = sceneSize
-        
+
         setupInitialRows()
+        setupInitialWalls()
     }
 }
 
@@ -117,10 +127,10 @@ extension SpawnSystem {
     /// Membuat seluruh row awal
     /// dan menyusunnya secara diagonal isometric
     private func setupInitialRows() {
-        
+
         let tileWidth = IsometricHelper.tileWidth
         let tileHeight = IsometricHelper.tileHeight
-        
+
         for index in 0..<totalRows {
             
             /// Entity untuk movement logic
@@ -137,12 +147,56 @@ extension SpawnSystem {
                 x: CGFloat(index) * (tileWidth / 2),
                 y: CGFloat(index) * (tileHeight / 2)
             )
-            
+
             worldNode.addChild(rowNode)
-            
-            /// Simpan entity dan row
-            RowEntities.append(entity)
+
+            // Simpan data
+            rowEntities.append(entity)
             rowNodes.append(rowNode)
+        }
+    }
+    
+    //TODO: Setup Wall
+    private func setupInitialWalls(){
+        for index in 0..<totalWallChunks {
+            //WALL KIRI
+            let leftEntity = WallEntity(speed: moveSpeed)
+            let leftNode = WallNode(side: .left)
+            
+            // Posisi Chunk Kiri
+            let leftBaseX: CGFloat = -150
+            let leftBaseY: CGFloat = 780
+            
+            // zPosition dinamis: Makin atas (index besar) makin kecil z-nya agar di belakang
+            leftNode.zPosition = CGFloat(100 - index)
+            
+            leftNode.position = CGPoint(
+                x: leftBaseX + (CGFloat(index) * chunkOffsetX),
+                y: leftBaseY + (CGFloat(index) * chunkOffsetY)
+            )
+            worldNode.addChild(leftNode)
+            leftWallEntities.append(leftEntity)
+            leftWallNodes.append(leftNode)
+            
+            
+            // --- WALL KANAN ---
+            let rightEntity = WallEntity(speed: moveSpeed)
+            let rightNode = WallNode(side: .right)
+            
+            // Posisi Chunk Kanan
+            let rightBaseX: CGFloat = 100
+            let rightBaseY: CGFloat = -50
+            
+            // zPosition dinamis
+            rightNode.zPosition = CGFloat(100 - index)
+            
+            rightNode.position = CGPoint(
+                x: rightBaseX + (CGFloat(index) * chunkOffsetX),
+                y: rightBaseY + (CGFloat(index) * chunkOffsetY)
+            )
+            worldNode.addChild(rightNode)
+            rightWallEntities.append(rightEntity)
+            rightWallNodes.append(rightNode)
         }
     }
 }
@@ -155,7 +209,7 @@ extension SpawnSystem {
     ///
     /// - Parameter currentTime: Waktu frame saat ini
     func update(_ currentTime: TimeInterval) {
-        
+
         let deltaTime: TimeInterval
         
         /// Frame pertama tidak memiliki deltaTime
@@ -171,41 +225,40 @@ extension SpawnSystem {
         /// Update movement dan recycle row
         moveRows(deltaTime: deltaTime)
         recycleRowsIfNeeded()
+        
+        moveWall(deltaTime: deltaTime)
+        recycleWalls()
     }
 }
 
 // MARK: - Row Movement
 
 extension SpawnSystem {
-    
-    /// Menggerakkan seluruh row secara diagonal
-    ///
-    /// - Parameter deltaTime: Selisih waktu antar frame
+
     private func moveRows(deltaTime: TimeInterval) {
         
-        for (index, entity) in RowEntities.enumerated() {
-            
+        for (index, entity) in rowEntities.enumerated() {
             guard let movementComponent =
                     entity.component(ofType: MovementComponent.self)
             else {
                 continue
             }
-            
+
             let rowNode = rowNodes[index]
-            
+
             let speed = movementComponent.speed
-            
-            /// Movement vertikal
+
+            // Movement vertikal
             let dy = speed * CGFloat(deltaTime)
-            
-            /// Menyesuaikan movement horizontal
-            /// agar tetap sejajar tile isometric
+
+            // Menyesuaikan movement horizontal
+            // agar tetap sejajar tile isometric
             let dx = dy * (
                 IsometricHelper.tileWidth /
                 IsometricHelper.tileHeight
             )
-            
-            /// Gerakan diagonal kiri bawah
+
+            // Gerakan diagonal kiri bawah
             rowNode.position.x -= dx
             rowNode.position.y -= dy
         }
@@ -219,7 +272,7 @@ extension SpawnSystem {
     /// Mengecek apakah row paling depan
     /// sudah keluar layar dan perlu didaur ulang
     private func recycleRowsIfNeeded() {
-        
+
         guard let firstRow = rowNodes.first,
               let lastRow = rowNodes.last else {
             return
@@ -227,9 +280,9 @@ extension SpawnSystem {
         
         /// Threshold saat row dianggap keluar layar
         let thresholdY = -IsometricHelper.tileHeight
-        
+
         if firstRow.position.y < thresholdY {
-            
+
             let tileWidth = IsometricHelper.tileWidth
             let tileHeight = IsometricHelper.tileHeight
             
@@ -249,14 +302,13 @@ extension SpawnSystem {
             
             /// Spawn obstacle atau vehicle baru
             trySpawnObstacle(on: firstRow)
-            
-            /// Update urutan queue row
+
+            // Update urutan queue
             rowNodes.removeFirst()
             rowNodes.append(firstRow)
             
-            /// Update urutan queue entity
-            let firstEntity = RowEntities.removeFirst()
-            RowEntities.append(firstEntity)
+            let firstEntity = rowEntities.removeFirst()
+            rowEntities.append(firstEntity)
         }
     }
 }
@@ -273,7 +325,7 @@ extension SpawnSystem {
     ///
     /// - Parameter rowNode: Row target spawn
     private func trySpawnObstacle(on rowNode: RowNode) {
-        
+
         rowsSinceLastObstacle += 1
         rowsSinceLastVehicle += 1
         
@@ -431,3 +483,78 @@ extension SpawnSystem {
         }
     }
 }
+
+//MARK: -  Wall Movement & Recycling
+extension SpawnSystem{
+    //Movement
+    private func moveWall(deltaTime: TimeInterval) {
+        // Karena kecepatan sama, kita hitung dx dan dy sekali saja
+        let dy = moveSpeed * CGFloat(deltaTime)
+        let dx = dy * (IsometricHelper.tileWidth / IsometricHelper.tileHeight)
+        
+        // Gerakkan wall kiri
+        for node in leftWallNodes {
+            node.position.x -= dx
+            node.position.y -= dy
+        }
+        
+        // Gerakkan wall kanan
+        for node in rightWallNodes {
+            node.position.x -= dx
+            node.position.y -= dy
+        }
+    }
+    
+    //Recycling
+    private func recycleWalls() {
+        // Threshold bisa disesuaikan dengan tinggi asli tekstur wall-nya
+        let wallThresholdY: CGFloat = -1000
+        
+        // Recycle Kiri
+        if let firstLeft = leftWallNodes.first, let lastLeft = leftWallNodes.last {
+            if firstLeft.position.y < wallThresholdY {
+                // Pindahkan posisi chunk paling bawah ke atas (menyambung chunk paling atas)
+                firstLeft.position = CGPoint(
+                    x: lastLeft.position.x + chunkOffsetX,
+                    y: lastLeft.position.y + chunkOffsetY
+                )
+                
+                // Pindahkan data dari depan ke belakang array (Looping)
+                leftWallNodes.removeFirst()
+                leftWallNodes.append(firstLeft)
+                
+                let firstEntity = leftWallEntities.removeFirst()
+                leftWallEntities.append(firstEntity)
+                
+                // RESET SEMUA Z-POSITION (Solusi agar tidak hilang tenggelam)
+                for (index, node) in leftWallNodes.enumerated() {
+                    node.zPosition = CGFloat(150 - index)
+                }
+            }
+        }
+        
+        // Recycle Kanan
+        if let firstRight = rightWallNodes.first, let lastRight = rightWallNodes.last {
+            if firstRight.position.y < wallThresholdY {
+                // Pindahkan posisi
+                firstRight.position = CGPoint(
+                    x: lastRight.position.x + chunkOffsetX,
+                    y: lastRight.position.y + chunkOffsetY
+                )
+                
+                // Looping data
+                rightWallNodes.removeFirst()
+                rightWallNodes.append(firstRight)
+                
+                let firstEntity = rightWallEntities.removeFirst()
+                rightWallEntities.append(firstEntity)
+                
+                // RESET SEMUA Z-POSITION (Solusi agar tidak hilang tenggelam)
+                for (index, node) in rightWallNodes.enumerated() {
+                    node.zPosition = CGFloat(150 - index)
+                }
+            }
+        }
+    }
+}
+

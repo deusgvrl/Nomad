@@ -14,15 +14,44 @@
 		4FF7334D2FAC93D000E2CC60 /* Exceptions for "C2_ADA Shared" folder in "C2_ADA iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				ECS/Component/InputIntentComponent.swift,
+				ECS/Component/LaunchComponent.swift,
 				ECS/Component/MovementComponent.swift,
+				ECS/Component/NodeComponent.swift,
+				ECS/Component/PositionComponent.swift,
+				ECS/Component/RideAttachmentComponent.swift,
+				ECS/Entity/ObstacleEntity.swift,
+				ECS/Entity/PlayerEntity.swift,
+				ECS/Entity/VehicleEntity.swift,
+				ECS/Helper/EntityKind.swift,
+				ECS/Helper/GameConfiguration.swift,
+				ECS/Helper/GameplayRule.swift,
+				ECS/Helper/InputPhase.swift,
 				ECS/Entity/RowEntity.swift,
+				ECS/Entity/WallEntity.swift,
 				ECS/Helper/IsometricHelper.swift,
+				ECS/Helper/WallHelper.swift,
+				ECS/Helper/NomadAsset.swift,
+				ECS/Helper/ObstacleHelper.swift,
+				ECS/System/InputSystem.swift,
+				ECS/System/LatchSystem.swift,
+				ECS/System/LaunchSystem.swift,
+				ECS/System/MovementSystem.swift,
 				ECS/System/SpawnSystem.swift,
 				Resources/Assets.xcassets,
+				State/GameState.swift,
+				State/ObstacleState.swift,
+				State/PlayerState.swift,
+				State/ScreenState.swift,
+				State/StateMachine.swift,
+				State/VehicleState.swift,
+				Support/IsometricProjector.swift,
+				Support/ZPosition.swift,
 				UI/Node/FloorNode.swift,
 				UI/Node/ObstacleNode.swift,
 				UI/Node/RowNode.swift,
 				UI/Node/VehicleNode.swift,
+				UI/Node/WallNode.swift,
 				UI/Scene/GameScene.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
@@ -162,7 +191,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = L7P29889GM;
+				DEVELOPMENT_TEAM = AGBD4P9452;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -170,7 +199,7 @@
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -196,7 +225,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = L7P29889GM;
+				DEVELOPMENT_TEAM = AGBD4P9452;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -204,7 +233,7 @@
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
