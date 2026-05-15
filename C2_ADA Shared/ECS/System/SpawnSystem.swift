@@ -28,7 +28,7 @@ class SpawnSystem {
     private var lastUpdateTime: TimeInterval = 0
     
     /// Menyimpan entity row untuk logic movement
-    private var RowEntities: [RowEntity] = []
+    private var rowEntities: [RowEntity] = []
     
     /// Menyimpan visual row yang tampil di scene
     private var rowNodes: [RowNode] = []
