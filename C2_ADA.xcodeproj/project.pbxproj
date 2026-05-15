@@ -7,33 +7,35 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		4FF7333C2FAC93D000E2CC60 /* C2_ADA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = C2_ADA.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DAC4D1E22FB2378200C5E9F7 /* C2_ADA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = C2_ADA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		4FF7334D2FAC93D000E2CC60 /* Exceptions for "C2_ADA Shared" folder in "C2_ADA iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Actions.sks,
-				Assets.xcassets,
-				ECS/Components/InputIntentComponent.swift,
-				ECS/Components/LaunchComponent.swift,
-				ECS/Components/MovementComponent.swift,
-				ECS/Components/NodeComponent.swift,
-				ECS/Components/RideAttachmentComponent.swift,
-				ECS/Entities/PlayerEntity.swift,
-				ECS/Entities/VehicleEntity.swift,
-				ECS/Systems/InputSystem.swift,
-				ECS/Systems/LatchSystem.swift,
-				ECS/Systems/LaunchSystem.swift,
-				ECS/Systems/MovementSystem.swift,
-				GameScene.sks,
-				GameScene.swift,
-				Helper/EntityKind.swift,
-				Helper/GameConfiguration.swift,
-				Helper/GameplayRule.swift,
-				Helper/InputPhase.swift,
-				Helper/NomadAsset.swift,
+				ECS/Component/InputIntentComponent.swift,
+				ECS/Component/LaunchComponent.swift,
+				ECS/Component/MovementComponent.swift,
+				ECS/Component/NodeComponent.swift,
+				ECS/Component/PositionComponent.swift,
+				ECS/Component/RideAttachmentComponent.swift,
+				ECS/Entity/ObstacleEntity.swift,
+				ECS/Entity/PlayerEntity.swift,
+				ECS/Entity/VehicleEntity.swift,
+				ECS/Helper/EntityKind.swift,
+				ECS/Helper/GameConfiguration.swift,
+				ECS/Helper/GameplayRule.swift,
+				ECS/Helper/InputPhase.swift,
+				ECS/Helper/IsometricHelper.swift,
+				ECS/Helper/NomadAsset.swift,
+				ECS/Helper/ObstacleHelper.swift,
+				ECS/System/InputSystem.swift,
+				ECS/System/LatchSystem.swift,
+				ECS/System/LaunchSystem.swift,
+				ECS/System/MovementSystem.swift,
+				ECS/System/SpawnSystem.swift,
+				Resources/Assets.xcassets,
 				State/GameState.swift,
 				State/ObstacleState.swift,
 				State/PlayerState.swift,
@@ -42,10 +44,14 @@
 				State/VehicleState.swift,
 				Support/IsometricProjector.swift,
 				Support/ZPosition.swift,
+				UI/Node/FloorNode.swift,
+				UI/Node/ObstacleNode.swift,
+				UI/Node/RowNode.swift,
+				UI/Scene/GameScene.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
 		};
-		4FF733512FAC93D000E2CC60 /* Exceptions for "C2_ADA iOS" folder in "C2_ADA iOS" target */ = {
+		4FF733512FAC93D000E2CC60 /* Exceptions for "iOS App" folder in "C2_ADA iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -63,12 +69,12 @@
 			path = "C2_ADA Shared";
 			sourceTree = "<group>";
 		};
-		4FF7333E2FAC93D000E2CC60 /* C2_ADA iOS */ = {
+		4FF7333E2FAC93D000E2CC60 /* iOS App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4FF733512FAC93D000E2CC60 /* Exceptions for "C2_ADA iOS" folder in "C2_ADA iOS" target */,
+				4FF733512FAC93D000E2CC60 /* Exceptions for "iOS App" folder in "C2_ADA iOS" target */,
 			);
-			path = "C2_ADA iOS";
+			path = "iOS App";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -88,17 +94,9 @@
 			isa = PBXGroup;
 			children = (
 				4FF733332FAC93CF00E2CC60 /* C2_ADA Shared */,
-				4FF7333E2FAC93D000E2CC60 /* C2_ADA iOS */,
-				4FF7333D2FAC93D000E2CC60 /* Products */,
+				4FF7333E2FAC93D000E2CC60 /* iOS App */,
+				DAC4D1E22FB2378200C5E9F7 /* C2_ADA.app */,
 			);
-			sourceTree = "<group>";
-		};
-		4FF7333D2FAC93D000E2CC60 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				4FF7333C2FAC93D000E2CC60 /* C2_ADA.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -117,13 +115,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4FF7333E2FAC93D000E2CC60 /* C2_ADA iOS */,
+				4FF7333E2FAC93D000E2CC60 /* iOS App */,
 			);
 			name = "C2_ADA iOS";
 			packageProductDependencies = (
 			);
 			productName = "C2_ADA iOS";
-			productReference = 4FF7333C2FAC93D000E2CC60 /* C2_ADA.app */;
+			productReference = DAC4D1E22FB2378200C5E9F7 /* C2_ADA.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -151,7 +149,7 @@
 			mainGroup = 4FF7332E2FAC93CF00E2CC60;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 4FF7333D2FAC93D000E2CC60 /* Products */;
+			productRefGroup = 4FF7332E2FAC93CF00E2CC60;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -190,7 +188,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = M7YC437JCH;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "C2_ADA iOS/Info.plist";
+				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
@@ -224,7 +222,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = M7YC437JCH;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "C2_ADA iOS/Info.plist";
+				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;

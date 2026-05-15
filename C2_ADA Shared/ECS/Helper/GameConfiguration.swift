@@ -26,21 +26,30 @@ struct GameConfiguration {
         playableWidthFraction: 1.0 / 3.0,
         // Visual road angle used for the isometric road direction.
         isometricViewAngleInDegrees: 60,
+        // Shallow white guide line angle from the hi-fi grid prototype.
+        // This is separate from the 60-degree isometric road/art angle.
+        movementAxisAngleInDegrees: 16,
+        // Rough canyon/wall limits measured from the hi-fi grid prototype.
+        // These are offsets from `currentVehiclePosition` along the movement axis.
+        movementAxisXOffsetBounds: -55...265,
+        showsMovementBoundsGuide: false,
         dragSensitivity: 1.0,
         // Width of the gray road band. Movement clamps inside this width.
         roadWidth: 380,
         // Bottom-center x location of the road before projecting forward.
         roadBottomCenterXPosition: -212,
         // First playable vehicle slot from the lo-fi reference.
-        currentVehiclePosition: CGPoint(x: -115, y: -245),
+        currentVehiclePosition: CGPoint(x: -115, y: -170),
         obstaclePositions: [
             CGPoint(x: 45, y: 125),
             CGPoint(x: 130, y: -20),
             CGPoint(x: -95, y: -360)
         ],
-        playerRideOffset: CGVector(dx: -8, dy: 42),
-        vehicleSize: CGSize(width: 62, height: 112),
-        playerSize: CGSize(width: 19, height: 19),
+        // The imported car image has transparent padding, so the node is sized
+        // slightly larger than the visible car in the hi-fi prototype.
+        playerRideOffset: CGVector(dx: -10, dy: 6),
+        vehicleSize: CGSize(width: 124, height: 124),
+        playerSize: CGSize(width: 40, height: 64),
         obstacleSize: CGSize(width: 36, height: 92),
         launchForwardAngleInDegrees: 60,
         launchVelocity: 360,
@@ -55,6 +64,9 @@ struct GameConfiguration {
     let referenceScreenSize: CGSize
     let playableWidthFraction: CGFloat
     let isometricViewAngleInDegrees: CGFloat
+    let movementAxisAngleInDegrees: CGFloat
+    let movementAxisXOffsetBounds: ClosedRange<CGFloat>
+    let showsMovementBoundsGuide: Bool
     let dragSensitivity: CGFloat
     let roadWidth: CGFloat
     let roadBottomCenterXPosition: CGFloat
@@ -90,5 +102,29 @@ struct GameConfiguration {
             x: roadBottomCenterXPosition,
             y: -referenceScreenSize.height / 2
         )
+    }
+
+    /// SpriteKit-space slope for the shallow movement line.
+    ///
+    /// Positive screen degrees tilt visually down to the right, while SpriteKit
+    /// uses positive Y upward, so the stored slope is negative.
+    var movementAxisSlope: CGFloat {
+        let radians = Double(movementAxisAngleInDegrees) * Double.pi / 180
+        return -CGFloat(tan(radians))
+    }
+
+    func movementAxisPosition(xOffset: CGFloat) -> CGPoint {
+        CGPoint(
+            x: currentVehiclePosition.x + xOffset,
+            y: currentVehiclePosition.y + xOffset * movementAxisSlope
+        )
+    }
+
+    var movementAxisStartPosition: CGPoint {
+        movementAxisPosition(xOffset: movementAxisXOffsetBounds.lowerBound)
+    }
+
+    var movementAxisEndPosition: CGPoint {
+        movementAxisPosition(xOffset: movementAxisXOffsetBounds.upperBound)
     }
 }

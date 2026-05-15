@@ -12,9 +12,8 @@ import SpriteKit
 
 /// The player ECS entity.
 ///
-/// Right now the player is represented by a red placeholder circle. Later, this
-/// entity can swap that node for real player sprites without changing the input,
-/// movement, or launch systems.
+/// The player is drawn from the `PLAYER` asset, while the input, movement, and
+/// launch systems only talk to this entity's node.
 final class PlayerEntity: GKEntity {
 
     // MARK: - SpriteKit Node
@@ -82,17 +81,11 @@ final class PlayerEntity: GKEntity {
         )
     }
 
-    // MARK: - Placeholder Art
+    // MARK: - Player Art
 
     private static func makePlayerNode(configuration: GameConfiguration) -> SKNode {
-        let playerNode = SKNode()
-        let size = configuration.playerSize
-
-        let marker = SKShapeNode(ellipseOf: size)
-        marker.fillColor = SKColor(red: 0.68, green: 0.25, blue: 0.22, alpha: 1.0)
-        marker.strokeColor = SKColor.black.withAlphaComponent(0.12)
-        marker.lineWidth = 1
-        playerNode.addChild(marker)
+        let playerNode = SKSpriteNode(imageNamed: NomadAsset.player.rawValue)
+        playerNode.size = configuration.playerSize
 
         return playerNode
     }

@@ -9,14 +9,19 @@
 
 /// Planned asset names from the team's art list.
 ///
-/// The current prototype still uses shape nodes, but these raw values are ready
-/// for future `SKSpriteNode(imageNamed:)` calls once final assets are imported.
+/// Keeping asset names here avoids hard-coded strings inside entity files.
+/// Entity files can call assets with `SKSpriteNode(imageNamed:)`.
 enum NomadAsset: String {
     // MARK: Player
 
+    case player = "PLAYER"
     case playerLegsStraight = "PlayerLegsStraight"
     case playerLegsLeft = "PlayerLegsLeft"
     case playerLegsRight = "PlayerLegsRight"
+
+    // MARK: Vehicle
+
+    case carIdle = "CAR IDLE"
 
     // MARK: Jeep
 
