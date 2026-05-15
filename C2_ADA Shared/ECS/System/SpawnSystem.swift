@@ -10,56 +10,56 @@ import SpriteKit
 import GameplayKit
 
 class SpawnSystem {
-    
+
     // MARK: - Core Properties
-    
+
     // Container utama untuk semua row
     private let worldNode: SKNode
-    
+
     // Ukuran scene game
     private let sceneSize: CGSize
-    
+
     // Menyimpan waktu frame sebelumnya
     private var lastUpdateTime: TimeInterval = 0
-    
+
     // Data entity dan visual row
     private var RowEntities: [RowEntity] = []
     private var rowNodes: [RowNode] = []
-    
+
     // MARK: - Grid Configuration
-    
+
     // Jumlah row dan kolom aktif
     private let totalRows: Int = 25
     private let colCount: Int = 20
-    
+
     // MARK: - Movement
-    
+
     // Kecepatan movement row
     private let moveSpeed: CGFloat = 150
-    
+
     // MARK: - Obstacle
-    
+
     // Menghitung jarak row kosong antar obstacle
     private var rowsSinceLastObstacle: Int = 0
-    
+
     // Minimal row aman
     private let minSafeRows = 5
-    
+
     // Peluang obstacle spawn
     private let spawnChance = 0.7
-    
+
     // Menyimpan posisi obstacle sebelumnya
     private var lastObstacleCol: Int = -1
-    
+
     // Mencegah pola obstacle monoton
     private var lastObstacleSum: Int = -1
-    
+
     // MARK: - Initialization
-    
+
     init(worldNode: SKNode, sceneSize: CGSize) {
         self.worldNode = worldNode
         self.sceneSize = sceneSize
-        
+
         setupInitialRows()
     }
 }
@@ -67,14 +67,14 @@ class SpawnSystem {
 // MARK: - Initial Setup
 
 extension SpawnSystem {
-    
+
     private func setupInitialRows() {
-        
+
         let tileWidth = IsometricHelper.tileWidth
         let tileHeight = IsometricHelper.tileHeight
-        
+
         for index in 0..<totalRows {
-            
+
             // Entity movement
             let entity = RowEntity(speed: moveSpeed)
             
@@ -83,15 +83,15 @@ extension SpawnSystem {
                 rowIndex: 0,
                 colCount: colCount
             )
-            
+
             // Posisi diagonal isometric
             rowNode.position = CGPoint(
                 x: CGFloat(index) * (tileWidth / 2),
                 y: CGFloat(index) * (tileHeight / 2)
             )
-            
+
             worldNode.addChild(rowNode)
-            
+
             // Simpan data
             RowEntities.append(entity)
             rowNodes.append(rowNode)
@@ -102,19 +102,19 @@ extension SpawnSystem {
 // MARK: - Update Loop
 
 extension SpawnSystem {
-    
+
     func update(_ currentTime: TimeInterval) {
-        
+
         let deltaTime: TimeInterval
-        
+
         if lastUpdateTime == 0 {
             deltaTime = 0
         } else {
             deltaTime = currentTime - lastUpdateTime
         }
-        
+
         lastUpdateTime = currentTime
-        
+
         moveRows(deltaTime: deltaTime)
         recycleRowsIfNeeded()
     }
@@ -123,7 +123,7 @@ extension SpawnSystem {
 // MARK: - Row Movement
 
 extension SpawnSystem {
-    
+
     private func moveRows(deltaTime: TimeInterval) {
         
         for (index, entity) in RowEntities.enumerated() {
@@ -132,21 +132,21 @@ extension SpawnSystem {
             else {
                 continue
             }
-            
+
             let rowNode = rowNodes[index]
-            
+
             let speed = movementComponent.speed
-            
+
             // Movement vertikal
             let dy = speed * CGFloat(deltaTime)
-            
+
             // Menyesuaikan movement horizontal
             // agar tetap sejajar tile isometric
             let dx = dy * (
                 IsometricHelper.tileWidth /
                 IsometricHelper.tileHeight
             )
-            
+
             // Gerakan diagonal kiri bawah
             rowNode.position.x -= dx
             rowNode.position.y -= dy
@@ -157,22 +157,22 @@ extension SpawnSystem {
 // MARK: - Row Recycling
 
 extension SpawnSystem {
-    
+
     private func recycleRowsIfNeeded() {
-        
+
         guard let firstRow = rowNodes.first,
               let lastRow = rowNodes.last else {
             return
         }
-        
+
         // Threshold saat row keluar layar
         let thresholdY = -IsometricHelper.tileHeight
-        
+
         if firstRow.position.y < thresholdY {
-            
+
             let tileWidth = IsometricHelper.tileWidth
             let tileHeight = IsometricHelper.tileHeight
-            
+
             // Pindahkan row ke posisi paling atas
             firstRow.position = CGPoint(
                 x: lastRow.position.x + (tileWidth / 2),
@@ -188,7 +188,7 @@ extension SpawnSystem {
             
             // Spawn rintangan baru (statis atau kendaraan)
             trySpawnObstacle(on: firstRow)
-            
+
             // Update urutan queue
             rowNodes.removeFirst()
             rowNodes.append(firstRow)
@@ -202,9 +202,9 @@ extension SpawnSystem {
 // MARK: - Obstacle & Vehicle Spawn
 
 extension SpawnSystem {
-    
+
     private func trySpawnObstacle(on rowNode: RowNode) {
-        
+
         rowsSinceLastObstacle += 1
         
         // Pastikan ada jarak aman antar rintangan

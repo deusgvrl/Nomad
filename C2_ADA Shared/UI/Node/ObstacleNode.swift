@@ -7,12 +7,6 @@
 
 import SpriteKit
 
-enum ObstacleType: String, CaseIterable {
-    case small = "OBSTACLE 1"
-    case medium = "OBSTACLE 2"
-    case large = "OBSTACLE 3"
-}
-
 class ObstacleNode: SKSpriteNode {
     let obstacleType: ObstacleType
     
