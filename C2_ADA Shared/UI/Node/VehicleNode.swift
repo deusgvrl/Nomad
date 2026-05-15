@@ -8,7 +8,7 @@
 import SpriteKit
 
 enum VehicleType: String, CaseIterable{
-    case car = "VEHICLE TEST"
+    case car = "CAR IDLE"
 }
 
 class VehicleNode: SKSpriteNode {
@@ -18,20 +18,27 @@ class VehicleNode: SKSpriteNode {
     init(type: VehicleType) {
         self.vehicleType = type
         let texture = SKTexture(imageNamed: type.rawValue)
-        
-        let scale: CGFloat = 1.5
-        
-        let vehicleSize = CGSize(
-            width: IsometricHelper.tileWidth * scale,
-            height: IsometricHelper.tileHeight * scale
-        )
+
+        // Gunakan satu faktor skala agar proporsional
+        let scaleFactor: CGFloat = 2
+        // Hitung ukuran berdasarkan rasio asli gambar agar tidak "gepeng"
+        let textureSize = texture.size()
+        let aspectRatio = textureSize.height / textureSize.width
+
+        // Tentukan lebar berdasarkan tile, lalu tinggi mengikuti rasio asli
+        let targetWidth = IsometricHelper.tileWidth * scaleFactor
+        let targetHeight = targetWidth * aspectRatio
+
+        let vehicleSize = CGSize(width: targetWidth, height: targetHeight)
 
         super.init(texture: texture, color: .clear, size: vehicleSize)
-        
-        self.name = "Vehicle"
-        
-        self.anchorPoint = CGPoint(x: 0.5, y: 0.1)
+
+        self.name = "vehicle"
+
+        // Anchor point disesuaikan agar mobil "menempel" di atas tile
+        self.anchorPoint = CGPoint(x: 0.5, y: 0.15)
     }
+
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
