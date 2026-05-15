@@ -28,7 +28,9 @@
 				ECS/Helper/GameplayRule.swift,
 				ECS/Helper/InputPhase.swift,
 				ECS/Entity/RowEntity.swift,
+				ECS/Entity/WallEntity.swift,
 				ECS/Helper/IsometricHelper.swift,
+				ECS/Helper/WallHelper.swift,
 				ECS/Helper/NomadAsset.swift,
 				ECS/Helper/ObstacleHelper.swift,
 				ECS/System/InputSystem.swift,
@@ -49,6 +51,7 @@
 				UI/Node/ObstacleNode.swift,
 				UI/Node/RowNode.swift,
 				UI/Node/VehicleNode.swift,
+				UI/Node/WallNode.swift,
 				UI/Scene/GameScene.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
@@ -188,7 +191,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = M7YC437JCH;
+				DEVELOPMENT_TEAM = AGBD4P9452;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -222,7 +225,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = M7YC437JCH;
+				DEVELOPMENT_TEAM = AGBD4P9452;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
