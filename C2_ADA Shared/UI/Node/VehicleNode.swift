@@ -20,7 +20,7 @@ class VehicleNode: SKSpriteNode {
         let texture = SKTexture(imageNamed: type.rawValue)
 
         // Gunakan satu faktor skala agar proporsional
-        let scaleFactor: CGFloat = 1.5
+        let scaleFactor: CGFloat = 2
         // Hitung ukuran berdasarkan rasio asli gambar agar tidak "gepeng"
         let textureSize = texture.size()
         let aspectRatio = textureSize.height / textureSize.width

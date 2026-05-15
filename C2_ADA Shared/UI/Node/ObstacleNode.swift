@@ -14,20 +14,25 @@ class ObstacleNode: SKSpriteNode {
         self.obstacleType = type
         let texture = SKTexture(imageNamed: type.rawValue)
         
-        // Gunakan ukuran tile dari IsometricHelper agar pas
-        let scale: CGFloat = 1.5
-
-        let tileSize = CGSize(
-            width: IsometricHelper.tileWidth * scale,
-            height: IsometricHelper.tileHeight * scale
-        )
+        // Gunakan faktor skala yang proporsional
+        let scaleFactor: CGFloat = 2
+        
+        // Hitung ukuran berdasarkan rasio asli agar tidak "stretch"
+        let textureSize = texture.size()
+        let aspectRatio = textureSize.height / textureSize.width
+        
+        // Tentukan lebar berdasarkan tile, tinggi mengikuti rasio asli
+        let targetWidth = IsometricHelper.tileWidth * scaleFactor
+        let targetHeight = targetWidth * aspectRatio
+        
+        let tileSize = CGSize(width: targetWidth, height: targetHeight)
 
         super.init(texture: texture, color: .clear, size: tileSize)
         
         self.name = "obstacle"
         
-        // Atur anchorPoint ke tengah bawah agar rintangan "berdiri" tepat di atas tile
-        self.anchorPoint = CGPoint(x: 0.5, y: 0.1) 
+        // Atur anchorPoint agar rintangan "duduk" pas di atas tile
+        self.anchorPoint = CGPoint(x: 0.5, y: 0.15) 
     }
     
     required init?(coder aDecoder: NSCoder) {
