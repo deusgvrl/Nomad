@@ -23,7 +23,7 @@ class SpawnSystem {
     private var lastUpdateTime: TimeInterval = 0
 
     // Data entity dan visual row
-    private var rowEntities: [GKEntity] = []
+    private var RowEntities: [RowEntity] = []
     private var rowNodes: [RowNode] = []
 
     // MARK: - Grid Configuration
@@ -76,14 +76,8 @@ extension SpawnSystem {
         for index in 0..<totalRows {
 
             // Entity movement
-            let entity = GKEntity()
-
-            let movementComponent = MovementComponent(
-                speed: moveSpeed
-            )
-
-            entity.addComponent(movementComponent)
-
+            let entity = RowEntity(speed: moveSpeed)
+            
             // Visual row
             let rowNode = RowNode(
                 rowIndex: 0,
@@ -99,7 +93,7 @@ extension SpawnSystem {
             worldNode.addChild(rowNode)
 
             // Simpan data
-            rowEntities.append(entity)
+            RowEntities.append(entity)
             rowNodes.append(rowNode)
         }
     }
@@ -131,8 +125,8 @@ extension SpawnSystem {
 extension SpawnSystem {
 
     private func moveRows(deltaTime: TimeInterval) {
-
-        for (index, entity) in rowEntities.enumerated() {
+        
+        for (index, entity) in RowEntities.enumerated() {
             guard let movementComponent =
                     entity.component(ofType: MovementComponent.self)
             else {
@@ -184,81 +178,92 @@ extension SpawnSystem {
                 x: lastRow.position.x + (tileWidth / 2),
                 y: lastRow.position.y + (tileHeight / 2)
             )
-
-            // Hapus obstacle lama
-            firstRow.childNode(withName: "obstacle")?
-                .removeFromParent()
-
-            // Spawn obstacle baru
+            
+            // Hapus SEMUA rintangan atau kendaraan lama di baris ini agar tidak menumpuk
+            firstRow.children.forEach { child in
+                if child.name == "obstacle" || child.name == "vehicle" {
+                    child.removeFromParent()
+                }
+            }
+            
+            // Spawn rintangan baru (statis atau kendaraan)
             trySpawnObstacle(on: firstRow)
 
             // Update urutan queue
             rowNodes.removeFirst()
             rowNodes.append(firstRow)
-
-            let firstEntity = rowEntities.removeFirst()
-            rowEntities.append(firstEntity)
+            
+            let firstEntity = RowEntities.removeFirst()
+            RowEntities.append(firstEntity)
         }
     }
 }
 
-// MARK: - Obstacle Spawn
+// MARK: - Obstacle & Vehicle Spawn
 
 extension SpawnSystem {
 
     private func trySpawnObstacle(on rowNode: RowNode) {
 
         rowsSinceLastObstacle += 1
-
-        // Pastikan ada jarak aman antar obstacle
+        
+        // Pastikan ada jarak aman antar rintangan
         if rowsSinceLastObstacle >= minSafeRows {
-
-            // Random chance obstacle spawn
+            
+            // Peluang spawn rintangan
             if Double.random(in: 0...1) < spawnChance {
-
-                // Area spawn aman
-                let allowedCols = Array(4...(colCount - 5)).filter { col in
-
-                    // Hindari obstacle terlalu dekat
-                    let isFarEnough =
-                        abs(col - lastObstacleCol) >= 3
-
-                    // Hindari pola obstacle monoton
-                    let isDifferentPattern =
-                        (rowNode.rowIndex + col) != lastObstacleSum
-
-                    return isFarEnough && isDifferentPattern
+                
+                // Tentukan tipe: 30% peluang Vehicle, 70% Static Obstacle
+                if Double.random(in: 0...1) < 0.3 {
+                    spawnVehicle(on: rowNode)
+                } else {
+                    spawnObstacle(on: rowNode)
                 }
-
-                // Ambil kolom random valid
-                if let randomCol = allowedCols.randomElement() {
-
-                    let randomType =
-                        ObstacleType.allCases.randomElement() ?? .small
-
-                    // Membuat obstacle
-                    let obstacle = ObstacleNode(type: randomType)
-
-                    obstacle.name = "obstacle"
-
-                    obstacle.position =
-                        IsometricHelper.getScreenPosition(
-                            row: 0,
-                            col: randomCol
-                        )
-
-                    obstacle.zPosition = 100
-
-                    rowNode.addChild(obstacle)
-
-                    // Simpan histori obstacle
-                    lastObstacleCol = randomCol
-                    lastObstacleSum = rowNode.rowIndex + randomCol
-                }
-
-                // Reset counter obstacle
+                
+                // Reset counter
                 rowsSinceLastObstacle = 0
             }
+        }
+    }
+    
+    private func spawnVehicle(on rowNode: RowNode) {
+        // Catatan: Pastikan VehicleNode sudah terdefinisi di proyek Anda
+         let vehicle = VehicleNode(type: .car)
+         vehicle.name = "vehicle"
+        
+        // Pilih kolom acak di area tengah yang aman
+         let randomCol = Int.random(in: 4...(colCount - 5))
+         vehicle.position = IsometricHelper.getScreenPosition(row: 0, col: randomCol)
+         vehicle.zPosition = 100
+        
+         rowNode.addChild(vehicle)
+    }
+    
+    private func spawnObstacle(on rowNode: RowNode) {
+        // Area spawn aman
+        let allowedCols = Array(4...(colCount - 5)).filter { col in
+            // Hindari obstacle terlalu dekat
+            let isFarEnough = abs(col - lastObstacleCol) >= 3
+            // Hindari pola obstacle monoton
+            let isDifferentPattern = (rowNode.rowIndex + col) != lastObstacleSum
+            
+            return isFarEnough && isDifferentPattern
+        }
+        
+        // Ambil kolom random valid
+        if let randomCol = allowedCols.randomElement() {
+            let randomType = ObstacleType.allCases.randomElement() ?? .small
+            let obstacle = ObstacleNode(type: randomType)
+            
+            obstacle.name = "obstacle"
+            obstacle.position = IsometricHelper.getScreenPosition(row: 0, col: randomCol)
+            obstacle.zPosition = 100
+            
+            rowNode.addChild(obstacle)
+            
+            // Simpan histori obstacle
+            lastObstacleCol = randomCol
+            lastObstacleSum = rowNode.rowIndex + randomCol
         }
     }
 }
