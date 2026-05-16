@@ -23,30 +23,60 @@ final class VehicleEntity: GKEntity {
     let node: SKNode
 
     // MARK: - Initialization
-
-    init(configuration: GameConfiguration) {
+    
+    init(node: SKNode, movementComponent: MovementComponent? = nil) {
+        self.node = node
+        super.init()
+        
+        addComponent(NodeComponent(node: node))
+        
+        if let movement = movementComponent {
+            addComponent(movement)
+        }
+    }
+    
+    convenience init(configuration: GameConfiguration){
+        
         let vehicleNode = Self.makeVehicleNode(configuration: configuration)
         vehicleNode.name = "vehicle"
         vehicleNode.zPosition = ZPosition.vehicle
         vehicleNode.position = configuration.currentVehiclePosition
-        self.node = vehicleNode
-
-        super.init()
-
-        addComponent(NodeComponent(node: vehicleNode))
-        // Movement follows a shallow screen-space angle, clamped to the visible
-        // phone bounds from the centered SpriteKit scene.
-        addComponent(
-            MovementComponent(
-                position: configuration.currentVehiclePosition,
-                screenSize: configuration.referenceScreenSize,
-                vehicleSize: configuration.vehicleSize,
-                movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
-                movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
-                dragSensitivity: configuration.dragSensitivity
-            )
+        
+        let steering = MovementComponent(
+            position: configuration.currentVehiclePosition,
+            screenSize: configuration.referenceScreenSize,
+            vehicleSize: configuration.vehicleSize,
+            movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
+            movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
+            dragSensitivity: configuration.dragSensitivity
         )
+        self.init(node: vehicleNode, movementComponent: steering)
     }
+    
+
+//    init(configuration: GameConfiguration) {
+//        let vehicleNode = Self.makeVehicleNode(configuration: configuration)
+//        vehicleNode.name = "vehicle"
+//        vehicleNode.zPosition = ZPosition.vehicle
+//        vehicleNode.position = configuration.currentVehiclePosition
+//        self.node = vehicleNode
+//
+//        super.init()
+//
+//        addComponent(NodeComponent(node: vehicleNode))
+//        // Movement follows a shallow screen-space angle, clamped to the visible
+//        // phone bounds from the centered SpriteKit scene.
+//        addComponent(
+//            MovementComponent(
+//                position: configuration.currentVehiclePosition,
+//                screenSize: configuration.referenceScreenSize,
+//                vehicleSize: configuration.vehicleSize,
+//                movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
+//                movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
+//                dragSensitivity: configuration.dragSensitivity
+//            )
+//        )
+//    }
 
     // MARK: - Required Coder Initializer
 
