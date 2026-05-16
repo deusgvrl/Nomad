@@ -75,10 +75,15 @@ final class PlayerEntity: GKEntity {
     /// The offset is named in `GameConfiguration` so asset placement can be tuned
     /// later when the real player and vehicle sprites arrive.
     func place(on vehicle: VehicleEntity) {
-        node.position = CGPoint(
-            x: vehicle.node.position.x + rideOffset.dx,
-            y: vehicle.node.position.y + rideOffset.dy
-        )
+        guard let playerParent = node.parent,
+              let vehicleParent = vehicle.node.parent,
+              playerParent !== vehicleParent else {
+            node.position = CGPoint(x: vehicle.node.position.x + rideOffset.dx, y: vehicle.node.position.y + rideOffset.dy)
+            return
+        }
+        let targetPos = vehicleParent.convert(vehicle.node.position, to: playerParent)
+        
+        node.position = CGPoint(x: targetPos.x + rideOffset.dx, y: targetPos.y + rideOffset.dy)
     }
 
     // MARK: - Player Art
