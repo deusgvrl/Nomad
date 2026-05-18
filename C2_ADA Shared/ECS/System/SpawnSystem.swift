@@ -69,6 +69,9 @@ class SpawnSystem {
     /// Menyimpan pola obstacle sebelumnya
     /// Digunakan untuk mencegah pola spawn monoton
     private var lastObstacleSum: Int = -1
+    
+    /// Menyimpan tipe obstacle terakhir yang di-spawn
+    private var lastObstacleType: ObstacleType?
 
     // MARK: - Vehicle Spawning Rules
     
@@ -168,8 +171,8 @@ extension SpawnSystem {
             let leftBaseX: CGFloat = -150
             let leftBaseY: CGFloat = 780
             
-            // zPosition dinamis: Makin atas (index besar) makin kecil z-nya agar di belakang
-            leftNode.zPosition = CGFloat(100 - index)
+            // zPosition dinamis: Menggunakan leftWall (background)
+            leftNode.zPosition = ZPosition.leftWall + CGFloat(totalWallChunks - index)
             
             leftNode.position = CGPoint(
                 x: leftBaseX + (CGFloat(index) * chunkOffsetX),
@@ -188,8 +191,8 @@ extension SpawnSystem {
             let rightBaseX: CGFloat = 100
             let rightBaseY: CGFloat = -50
             
-            // zPosition dinamis
-            rightNode.zPosition = CGFloat(100 - index)
+            // zPosition dinamis: Menggunakan rightWall (foreground)
+            rightNode.zPosition = ZPosition.rightWall + CGFloat(totalWallChunks - index)
             
             rightNode.position = CGPoint(
                 x: rightBaseX + (CGFloat(index) * chunkOffsetX),
@@ -225,6 +228,7 @@ extension SpawnSystem {
         
         /// Update movement dan recycle row
         moveRows(deltaTime: deltaTime)
+        moveVehicles(deltaTime: deltaTime)
         recycleRowsIfNeeded()
         
         moveWall(deltaTime: deltaTime)
@@ -264,6 +268,47 @@ extension SpawnSystem {
             rowNode.position.y -= dy
         }
     }
+
+    private func moveVehicles(deltaTime: TimeInterval) {
+        let tileWidth = IsometricHelper.tileWidth
+        let tileHeight = IsometricHelper.tileHeight
+        
+        // Pergerakan dunia (diagonal kiri bawah - sama dengan row)
+        let worldDy = moveSpeed * CGFloat(deltaTime)
+        let worldDx = worldDy * (tileWidth / tileHeight)
+
+        for entity in vehicleEntities {
+            guard let movement = entity.component(ofType: MovementComponent.self) else {
+                continue
+            }
+
+            // Kecepatan mandiri kendaraan (maju / diagonal kanan atas)
+            let speed = movement.speed
+            let vehDy = speed * CGFloat(deltaTime)
+            let vehDx = vehDy * (tileWidth / tileHeight)
+
+            // Kombinasi: Maju (veh) dan mengikuti flow dunia (world)
+            entity.node.position.x += (vehDx - worldDx)
+            entity.node.position.y += (vehDy - worldDy)
+        }
+        
+        cleanupVehicles()
+    }
+
+    private func cleanupVehicles() {
+        // Threshold pembersihan: jika sudah jauh di bawah layar
+        // worldNode.y biasanya -0.8 * height, jadi 0 di worldNode sudah di bawah layar
+        let thresholdY: CGFloat = -100 
+        
+        vehicleEntities.removeAll { entity in
+            if entity.node.position.y < thresholdY {
+                entity.node.removeFromParent()
+                return true
+            }
+            return false
+        }
+    }
+
 }
 
 // MARK: - Row Recycling
@@ -293,25 +338,13 @@ extension SpawnSystem {
                 y: lastRow.position.y + (tileHeight / 2)
             )
             
-            /// Hapus seluruh obstacle dan vehicle lama
+            /// Hapus seluruh obstacle lama
             /// agar tidak menumpuk saat row digunakan kembali
-
             firstRow.children.forEach { child in
-                if child.name == "vehicle" {
-                    vehicleEntities.removeAll { entity in
-                        entity.node === child
-                    }
-                    child.removeFromParent()
-                } else if child.name == "obstacle" {
+                if child.name == "obstacle" {
                     child.removeFromParent()
                 }
-
             }
-//            firstRow.children.forEach { child in
-//                if child.name == "obstacle" || child.name == "vehicle" {
-//                    child.removeFromParent()
-//                }
-//            }
             
             /// Spawn obstacle atau vehicle baru
             trySpawnObstacle(on: firstRow)
@@ -426,18 +459,23 @@ extension SpawnSystem {
                         .randomElement() ??
                        absoluteMin
         
-        /// Posisi vehicle di grid isometric
-        vehicle.position = IsometricHelper.getScreenPosition(
+        /// Posisi vehicle relatif terhadap row
+        let relativePos = IsometricHelper.getScreenPosition(
             row: 0,
             col: randomCol
         )
         
-        vehicle.zPosition = 100
+        // Konversi ke worldNode agar tidak ikut terhapus saat row recycle
+        vehicle.position = worldNode.convert(relativePos, from: rowNode)
+        vehicle.zPosition = ZPosition.vehicle
         
-        let vehicleEntity = VehicleEntity(node: vehicle)
+        // Kecepatan acak untuk kendaraan yang spawn (maju pelan)
+        let randomSpeed = CGFloat.random(in: 15...35)
+        let movement = MovementComponent(speed: randomSpeed)
+        let vehicleEntity = VehicleEntity(node: vehicle, movementComponent: movement)
         vehicleEntities.append(vehicleEntity)
         
-        rowNode.addChild(vehicle)
+        worldNode.addChild(vehicle)
         
         /// Simpan histori vehicle
         previousVehicleCol = lastVehicleCol
@@ -474,10 +512,14 @@ extension SpawnSystem {
         
         if let randomCol = allowedCols.randomElement() {
             
-            /// Random tipe obstacle
-            let randomType =
-                ObstacleType.allCases.randomElement()
-                ?? .small
+            /// Mengambil semua tipe kecuali tipe terakhir agar tidak sama
+            let availableTypes = ObstacleType.allCases.filter { $0 != lastObstacleType }
+            
+            /// Random tipe obstacle dari yang tersedia
+            let randomType = availableTypes.randomElement() ?? .smallRock
+            
+            /// Simpan tipe ini sebagai yang terakhir
+            lastObstacleType = randomType
             
             let obstacle = ObstacleNode(type: randomType)
             
@@ -489,7 +531,7 @@ extension SpawnSystem {
                 col: randomCol
             )
             
-            obstacle.zPosition = 100
+            obstacle.zPosition = ZPosition.obstacle
             
             rowNode.addChild(obstacle)
             
@@ -545,7 +587,7 @@ extension SpawnSystem{
                 
                 // RESET SEMUA Z-POSITION (Solusi agar tidak hilang tenggelam)
                 for (index, node) in leftWallNodes.enumerated() {
-                    node.zPosition = CGFloat(150 - index)
+                    node.zPosition = ZPosition.leftWall + CGFloat(totalWallChunks - index)
                 }
             }
         }
@@ -568,7 +610,7 @@ extension SpawnSystem{
                 
                 // RESET SEMUA Z-POSITION (Solusi agar tidak hilang tenggelam)
                 for (index, node) in rightWallNodes.enumerated() {
-                    node.zPosition = CGFloat(150 - index)
+                    node.zPosition = ZPosition.rightWall + CGFloat(totalWallChunks - index)
                 }
             }
         }
@@ -579,17 +621,23 @@ extension SpawnSystem{
 extension SpawnSystem{
     
     func adopt(oldVehicle: VehicleEntity) {
-        guard let targetRow = rowNodes.first, let scene = oldVehicle.node.scene else { return }
+        guard let scene = oldVehicle.node.scene else { return }
         
         let scenePos = oldVehicle.node.parent?.convert(oldVehicle.node.position, to: scene) ?? oldVehicle.node.position
         
         oldVehicle.node.removeFromParent()
-        oldVehicle.node.position = scene.convert(scenePos, to: targetRow)
-        targetRow.addChild(oldVehicle.node)
+        oldVehicle.node.position = scene.convert(scenePos, to: worldNode)
+        worldNode.addChild(oldVehicle.node)
         
-        vehicleEntities.append(oldVehicle)
+        if !vehicleEntities.contains(where: { $0 === oldVehicle }) {
+            vehicleEntities.append(oldVehicle)
+        }
         
-        oldVehicle.node.zPosition = 100
+        oldVehicle.node.zPosition = ZPosition.vehicle
+    }
+    
+    func removeVehicle(entity: VehicleEntity) {
+        vehicleEntities.removeAll { $0 === entity }
     }
 
 }
