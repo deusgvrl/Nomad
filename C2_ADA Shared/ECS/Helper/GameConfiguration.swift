@@ -53,6 +53,7 @@ struct GameConfiguration {
         obstacleSize: CGSize(width: 36, height: 92),
         launchForwardAngleInDegrees: 60,
         launchVelocity: 360,
+        launchForwardThrust: 180,
         launchGravity: 920,
         latchDistance: 52,
         groundYPosition: -345,
@@ -84,6 +85,7 @@ struct GameConfiguration {
 
     let launchForwardAngleInDegrees: CGFloat
     let launchVelocity: CGFloat
+    let launchForwardThrust: CGFloat
     let launchGravity: CGFloat
     let latchDistance: CGFloat
     let groundYPosition: CGFloat

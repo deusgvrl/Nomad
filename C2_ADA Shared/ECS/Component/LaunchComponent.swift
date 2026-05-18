@@ -24,14 +24,16 @@ final class LaunchComponent: GKComponent {
     private(set) var currentPosition: CGPoint = .zero
     private var horizontalVelocity: CGFloat = 0
     private var verticalVelocity: CGFloat = 0
+    private var forwardYVelocity: CGFloat = 0
 
     // MARK: - Launch Lifecycle
 
-    func launch(from position: CGPoint, horizontalVelocity: CGFloat, verticalVelocity: CGFloat) {
+    func launch(from position: CGPoint, horizontalVelocity: CGFloat, verticalVelocity: CGFloat, forwardYVelocity:CGFloat) {
         isAirborne = true
         currentPosition = position
         self.horizontalVelocity = horizontalVelocity
         self.verticalVelocity = verticalVelocity
+        self.forwardYVelocity = forwardYVelocity
     }
 
     // MARK: - Physics Update
@@ -40,10 +42,12 @@ final class LaunchComponent: GKComponent {
         guard isAirborne else { return currentPosition }
 
         let elapsedTime = CGFloat(deltaTime)
+        
         verticalVelocity -= gravity * elapsedTime
+        
         currentPosition = CGPoint(
             x: currentPosition.x + horizontalVelocity * elapsedTime,
-            y: currentPosition.y + verticalVelocity * elapsedTime
+            y: currentPosition.y + (verticalVelocity + forwardYVelocity) * elapsedTime
         )
         return currentPosition
     }
@@ -54,5 +58,6 @@ final class LaunchComponent: GKComponent {
         isAirborne = false
         horizontalVelocity = 0
         verticalVelocity = 0
+        forwardYVelocity = 0
     }
 }
