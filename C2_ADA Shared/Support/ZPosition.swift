@@ -17,9 +17,11 @@ enum ZPosition {
     // MARK: - World Layers
 
     static let floor: CGFloat = 10
+    static let leftWall: CGFloat = 20
     static let vehicle: CGFloat = 40
-    static let obstacle: CGFloat = 45
-    static let player: CGFloat = 50
+    static let player: CGFloat = 45
+    static let rightWall: CGFloat = 100
+    static let obstacle: CGFloat = 150
 
     // MARK: - UI Layers
 

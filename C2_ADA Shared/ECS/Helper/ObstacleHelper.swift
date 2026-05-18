@@ -6,7 +6,11 @@
 //
 
 enum ObstacleType: String, CaseIterable {
-    case small = "OBSTACLE 1"
-    case medium = "OBSTACLE 2"
-    case large = "OBSTACLE 3"
+    case `1` = "OBSTACLE 1"
+    case `2` = "OBSTACLE 2"
+    case `3` = "OBSTACLE 3"
+    case `4` = "OBSTACLE 4"
+    case `5` = "OBSTACLE 5"
+    case `6` = "OBSTACLE 6"
+    case `7` = "OBSTACLE 7"
 }

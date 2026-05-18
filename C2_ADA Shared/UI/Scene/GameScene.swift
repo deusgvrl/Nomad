@@ -334,20 +334,24 @@ private extension GameScene {
     func completeLatch(on vehicle: VehicleEntity, startLocation: CGPoint? = nil) {
         guard let playerEntity else { return }
         
-        if let currentVehicleEntity, currentVehicleEntity !== vehicle {
-            spawnSystem?.adopt(oldVehicle: currentVehicleEntity)
-            currentVehicleEntity.removeComponent(ofType: MovementComponent.self)
+        // 1. Remove the old vehicle from the scene
+        if let oldVehicle = currentVehicleEntity {
+            oldVehicle.node.removeFromParent()
+            spawnSystem?.removeVehicle(entity: oldVehicle)
         }
         
+        // 2. Remove new vehicle from SpawnSystem's automatic flow
+        spawnSystem?.removeVehicle(entity: vehicle)
+        
+        // 3. Move the new vehicle to the initial spawn position
         let newParent = gameplayNode
-        if let oldParent = vehicle.node.parent, oldParent !== newParent {
-            vehicle.node.removeFromParent()
-            vehicle.node.position = configuration.currentVehiclePosition
-            newParent.addChild(vehicle.node)
-        }
+        vehicle.node.removeFromParent()
+        vehicle.node.position = configuration.currentVehiclePosition
+        newParent.addChild(vehicle.node)
         
         vehicle.node.zPosition = ZPosition.vehicle
         
+        // 4. Initialize steering starting from the spawn position
         let steering = MovementComponent(
             position: configuration.currentVehiclePosition,
             screenSize: configuration.referenceScreenSize,
@@ -358,12 +362,14 @@ private extension GameScene {
         )
         vehicle.addComponent(steering)
         
+        // 5. Attach player (this also reparents player to the vehicle)
         playerEntity.attach(to: vehicle)
         currentVehicleEntity = vehicle
         
         if let startLocation {
             movementSystem.beginSteering(vehicle: vehicle, at: startLocation)
         }
+        
         gameState = .playing
         playerState = .riding
     }
