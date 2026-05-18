@@ -32,6 +32,7 @@ class SpawnSystem {
     
     /// Menyimpan visual row yang tampil di scene
     private var rowNodes: [RowNode] = []
+    private(set) var vehicleEntities: [VehicleEntity] = []
 
     // MARK: - Grid Configuration
     
@@ -294,11 +295,23 @@ extension SpawnSystem {
             
             /// Hapus seluruh obstacle dan vehicle lama
             /// agar tidak menumpuk saat row digunakan kembali
+
             firstRow.children.forEach { child in
-                if child.name == "obstacle" || child.name == "vehicle" {
+                if child.name == "vehicle" {
+                    vehicleEntities.removeAll { entity in
+                        entity.node === child
+                    }
+                    child.removeFromParent()
+                } else if child.name == "obstacle" {
                     child.removeFromParent()
                 }
+
             }
+//            firstRow.children.forEach { child in
+//                if child.name == "obstacle" || child.name == "vehicle" {
+//                    child.removeFromParent()
+//                }
+//            }
             
             /// Spawn obstacle atau vehicle baru
             trySpawnObstacle(on: firstRow)
@@ -421,6 +434,9 @@ extension SpawnSystem {
         
         vehicle.zPosition = 100
         
+        let vehicleEntity = VehicleEntity(node: vehicle)
+        vehicleEntities.append(vehicleEntity)
+        
         rowNode.addChild(vehicle)
         
         /// Simpan histori vehicle
@@ -483,6 +499,7 @@ extension SpawnSystem {
         }
     }
 }
+
 
 //MARK: -  Wall Movement & Recycling
 extension SpawnSystem{
@@ -558,3 +575,21 @@ extension SpawnSystem{
     }
 }
 
+// MARK: - Vehicle Adoption
+extension SpawnSystem{
+    
+    func adopt(oldVehicle: VehicleEntity) {
+        guard let targetRow = rowNodes.first, let scene = oldVehicle.node.scene else { return }
+        
+        let scenePos = oldVehicle.node.parent?.convert(oldVehicle.node.position, to: scene) ?? oldVehicle.node.position
+        
+        oldVehicle.node.removeFromParent()
+        oldVehicle.node.position = scene.convert(scenePos, to: targetRow)
+        targetRow.addChild(oldVehicle.node)
+        
+        vehicleEntities.append(oldVehicle)
+        
+        oldVehicle.node.zPosition = 100
+    }
+
+}

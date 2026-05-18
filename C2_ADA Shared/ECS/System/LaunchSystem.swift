@@ -41,7 +41,8 @@ final class LaunchSystem {
         player.component(ofType: LaunchComponent.self)?.launch(
             from: player.node.position,
             horizontalVelocity: launchForwardXVelocity,
-            verticalVelocity: configuration.launchVelocity
+            verticalVelocity: configuration.launchVelocity,
+            forwardYVelocity: configuration.launchForwardThrust
         )
     }
 

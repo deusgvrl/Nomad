@@ -7,6 +7,7 @@
 
 import Foundation
 import SpriteKit
+import GameplayKit
 
 // MARK: - Game Scene
 
@@ -23,8 +24,8 @@ final class GameScene: SKScene {
     private let configuration: GameConfiguration
     private let inputSystem = InputSystem()
     private let movementSystem: MovementSystem
-    private let launchSystem: LaunchSystem
-    private let latchSystem: LatchSystem
+    private let launchSystem: LaunchSystem?
+    private let latchSystem: LatchSystem?
 
     // MARK: - World Container
 
@@ -90,6 +91,11 @@ final class GameScene: SKScene {
     override func update(_ currentTime: TimeInterval) {
         spawnSystem?.update(currentTime)
         updateJumpingPlayer(currentTime)
+        
+        if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
+            player.place(on: vehicle)
+        }
+        
     }
 
     // MARK: - Touch Input
@@ -231,7 +237,7 @@ private extension GameScene {
         // While jumping, SpriteKit's frame loop updates the player's arc.
         // Drag input is ignored until the player latches again.
         if playerState == .jumping {
-            let launchResult = launchSystem.update(player: playerEntity, deltaTime: deltaTime)
+            let launchResult = launchSystem?.update(player: playerEntity, deltaTime: deltaTime)
             if launchResult == .fell {
                 pausePlayerAfterFall()
             }
@@ -282,7 +288,7 @@ private extension GameScene {
         case .released where gameState == .playing && playerState == .riding:
             // Releasing detaches the player and starts the forward jump arc.
             movementSystem.endSteering(vehicle: currentVehicleEntity)
-            launchSystem.launch(player: playerEntity)
+            launchSystem?.launch(player: playerEntity)
             playerState = .jumping
 
         case .holding(let startLocation) where gameState == .playing && playerState == .jumping:
@@ -290,10 +296,13 @@ private extension GameScene {
             // branch, a miss only parks the player in falling state. The actual
             // game-over result is kept below for a future focused branch.
             playerState = .latching
-            if latchSystem.attemptLatch(player: playerEntity, onto: currentVehicleEntity) {
-                completeLatch(on: currentVehicleEntity, startLocation: startLocation)
+            let allVehicles = spawnSystem?.vehicleEntities ?? []
+            let activeVehicles = allVehicles.filter { $0 !== currentVehicleEntity }
+            
+            if let latchedVehicle = latchSystem?.attemptLatch(player: playerEntity, onto: activeVehicles) {
+                completeLatch(on: latchedVehicle, startLocation: startLocation)
             } else {
-                pausePlayerAfterFall()
+                playerState = .jumping
             }
 
         case .dragging where gameState == .playing && playerState == .jumping:
@@ -309,7 +318,7 @@ private extension GameScene {
 // MARK: - Movement State Helpers
 
 private extension GameScene {
-
+    
     /// Movement-focused placeholder for missed jumps and falls.
     ///
     /// This branch should stay focused on player/vehicle movement, so falling no
@@ -321,13 +330,37 @@ private extension GameScene {
             movementSystem.endSteering(vehicle: currentVehicleEntity)
         }
     }
-
+    
     func completeLatch(on vehicle: VehicleEntity, startLocation: CGPoint? = nil) {
         guard let playerEntity else { return }
-
+        
+        if let currentVehicleEntity, currentVehicleEntity !== vehicle {
+            spawnSystem?.adopt(oldVehicle: currentVehicleEntity)
+            currentVehicleEntity.removeComponent(ofType: MovementComponent.self)
+        }
+        
+        let newParent = gameplayNode
+        if let oldParent = vehicle.node.parent, oldParent !== newParent {
+            vehicle.node.removeFromParent()
+            vehicle.node.position = configuration.currentVehiclePosition
+            newParent.addChild(vehicle.node)
+        }
+        
+        vehicle.node.zPosition = ZPosition.vehicle
+        
+        let steering = MovementComponent(
+            position: configuration.currentVehiclePosition,
+            screenSize: configuration.referenceScreenSize,
+            vehicleSize: configuration.vehicleSize,
+            movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
+            movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
+            dragSensitivity: configuration.dragSensitivity
+        )
+        vehicle.addComponent(steering)
+        
         playerEntity.attach(to: vehicle)
         currentVehicleEntity = vehicle
-
+        
         if let startLocation {
             movementSystem.beginSteering(vehicle: vehicle, at: startLocation)
         }
@@ -335,6 +368,40 @@ private extension GameScene {
         playerState = .riding
     }
 }
+//        let oldParent = currentVehicleEntity.node.parent
+//        let newParent = vehicle.node.parent
+//        let scene = currentVehicleEntity.node.scene
+//        
+//        if let scene, let oldParent, let newParent {
+//            let scenePosOld = oldParent.convert(currentVehicleEntity.node.position, to: scene)
+//            
+//            currentVehicleEntity.node.removeFromParent()
+//            vehicle.node.removeFromParent()
+//            
+//            currentVehicleEntity.node.position = newParent.convert(scenePosOld, from: scene)
+//            newParent.addChild(currentVehicleEntity.node)
+//            
+//            vehicle.node.position = configuration.currentVehiclePosition
+//            oldParent.addChild(vehicle.node)
+//            
+//            currentVehicleEntity.node.zPosition = 100
+//            vehicle.node.zPosition = ZPosition.vehicle
+//            
+//            currentVehicleEntity.removeComponent(ofType: MovementComponent.self)
+//            
+//            let steering = MovementComponent (
+//                position: vehicle.node.position,
+//                screenSize: configuration.referenceScreenSize,
+//                vehicleSize: configuration.vehicleSize,
+//                movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
+//                movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
+//                dragSensitivity: configuration.dragSensitivity
+//            )
+//            vehicle.addComponent(steering)
+//            
+//        }
+//    }
+
 
 // MARK: - Parked Game Over Logic
 

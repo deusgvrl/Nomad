@@ -6,9 +6,11 @@
 //
 
 import GameplayKit
+import SpriteKit
 
 class ObstacleEntity: GKEntity {
     let type: ObstacleType
+    
 
     init(type: ObstacleType) {
         self.type = type

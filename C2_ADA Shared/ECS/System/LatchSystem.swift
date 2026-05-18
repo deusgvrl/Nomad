@@ -27,23 +27,46 @@ final class LatchSystem {
 
     // MARK: - Latch Attempt
 
-    func attemptLatch(player: PlayerEntity, onto vehicle: VehicleEntity) -> Bool {
-        guard canLatch(player: player, onto: vehicle) else { return false }
-
-        player.attach(to: vehicle)
-        return true
+    func attemptLatch(player: PlayerEntity, onto vehicles: [VehicleEntity]) -> VehicleEntity? {
+        
+        for vehicle in vehicles {
+            if canLatch(player: player, onto: vehicle) {
+                player.attach(to: vehicle)
+                return vehicle
+            }
+        }
+//        guard canLatch(player: player, onto: vehicle) else { return false }
+//
+//        player.attach(to: vehicle)
+//        return true
+        return nil
     }
 
     // MARK: - Latch Detection
 
     func canLatch(player: PlayerEntity, onto vehicle: VehicleEntity) -> Bool {
-        let playerFrame = player.node.calculateAccumulatedFrame()
-        // Expanding the vehicle frame makes early prototype latching more forgiving.
-        let vehicleFrame = vehicle.node.calculateAccumulatedFrame().insetBy(
-            dx: -configuration.latchDistance,
-            dy: -configuration.latchDistance
-        )
+        
+        
+        let localPlayerFrame = player.node.calculateAccumulatedFrame()
+        let localVehicleFrame = vehicle.node.calculateAccumulatedFrame().insetBy(dx: -configuration.latchDistance, dy: -configuration.latchDistance)
+        
+        guard let playerParent = player.node.parent,
+              let vehicleParent = vehicle.node.parent,
+              playerParent !== vehicleParent else {
+            return localPlayerFrame.intersects(localVehicleFrame)
+        }
+    
+        
+        let convertedVehicleFrame = vehicleParent.convert(localVehicleFrame, to: playerParent)
+        
+        
+//        let playerFrame = player.node.calculateAccumulatedFrame()
+//        // Expanding the vehicle frame makes early prototype latching more forgiving.
+//        let vehicleFrame = vehicle.node.calculateAccumulatedFrame().insetBy(
+//            dx: -configuration.latchDistance,
+//            dy: -configuration.latchDistance
+//        )
 
-        return playerFrame.intersects(vehicleFrame)
+        return localPlayerFrame.intersects(convertedVehicleFrame)
     }
 }
