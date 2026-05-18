@@ -516,7 +516,7 @@ extension SpawnSystem {
             let availableTypes = ObstacleType.allCases.filter { $0 != lastObstacleType }
             
             /// Random tipe obstacle dari yang tersedia
-            let randomType = availableTypes.randomElement() ?? .`1`
+            let randomType = availableTypes.randomElement() ?? .smallRock
             
             /// Simpan tipe ini sebagai yang terakhir
             lastObstacleType = randomType
