@@ -10,14 +10,15 @@ import SpriteKit
 
 class ObstacleEntity: GKEntity {
     let type: ObstacleType
+    let node: SKNode
     
-
-    init(type: ObstacleType) {
+    init(type: ObstacleType, node: SKNode) {
         self.type = type
+        self.node = node
         super.init()
 
-        // Di sini nanti bisa ditambahkan component behavior
-        // Contoh: self.addComponent(ObstacleBehaviorComponent())
+        addComponent(NodeComponent(node: node))
+        addComponent(HitboxComponent(size: type.hitboxSize, offset: type.hitboxOffset))
     }
 
     required init?(coder aDecoder: NSCoder) {

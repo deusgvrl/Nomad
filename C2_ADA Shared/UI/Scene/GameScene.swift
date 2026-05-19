@@ -26,6 +26,7 @@ final class GameScene: SKScene {
     private let movementSystem: MovementSystem
     private let launchSystem: LaunchSystem?
     private let latchSystem: LatchSystem?
+    private let collisionSystem = CollisionSystem()
 
     // MARK: - World Container
 
@@ -89,13 +90,59 @@ final class GameScene: SKScene {
     }
 
     override func update(_ currentTime: TimeInterval) {
+        guard gameState == .playing else { return }
+
         spawnSystem?.update(currentTime)
         updateJumpingPlayer(currentTime)
         
         if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
             player.place(on: vehicle)
+
+            // --- DEBUG: Show vehicle hitbox (OFF) ---
+            // vehicle.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: vehicle.node, color: .green)
+
+            // 1. Cek tabrakan dengan rintangan (Batu, Pohon, dll)
+            if let obstacles = spawnSystem?.obstacleEntities {
+
+                // --- DEBUG: Show all obstacle hitboxes (OFF) ---
+                /*
+                for obs in obstacles {
+                    obs.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: obs.node, color: .red)
+                }
+                */
+
+                if let hitObstacle = collisionSystem.checkCollision(vehicle: vehicle, with: obstacles) {
+                    print("Collision with \(hitObstacle.type.rawValue)")
+                    
+                    // TODO: Replace this pause logic with a formal Game Over sequence/Scene transition
+                    gameState = .gameOver
+                    playerState = .crashed
+                }
+            }
+
+            // 2. Cek tabrakan antar kendaraan (Mobil pemain vs Mobil lain)
+            // PERBAIKAN: Sekarang mobil bisa saling bertabrakan jika berada di jalur yang sama.
+            if let others = spawnSystem?.vehicleEntities {
+
+                // --- DEBUG: Show other vehicle hitboxes (OFF) ---
+                /*
+                for other in others {
+                    if other !== vehicle {
+                        other.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: other.node, color: .blue)
+                    }
+                }
+                */
+
+                if collisionSystem.checkVehicleCollision(playerVehicle: vehicle, with: others) != nil {
+                    print("Collision with another vehicle!")
+                    
+                    // TODO: Replace this pause logic with a formal Game Over sequence/Scene transition
+                    gameState = .gameOver
+                    playerState = .crashed
+                }
+            }
         }
-        
+
     }
 
     // MARK: - Touch Input
