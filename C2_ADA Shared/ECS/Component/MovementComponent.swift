@@ -95,7 +95,7 @@ final class MovementComponent: GKComponent {
         self.movementOriginPosition = CGPoint(x: originX, y: originY)
         self.movementAxisXOffsetBounds = movementAxisXOffsetBounds
         self.movementAxisSlope = movementAxisSlope
-        self.position = CGPoint(x: originX, y: originY)
+        self.position = clampedPosition
         self.roadWidthOffset = initialOffset
         super.init()
     }
