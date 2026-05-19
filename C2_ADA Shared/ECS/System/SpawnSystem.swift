@@ -33,6 +33,7 @@ class SpawnSystem {
     /// Menyimpan visual row yang tampil di scene
     private var rowNodes: [RowNode] = []
     private(set) var vehicleEntities: [VehicleEntity] = []
+    private(set) var obstacleEntities: [ObstacleEntity] = []
 
     // MARK: - Grid Configuration
     
@@ -342,6 +343,7 @@ extension SpawnSystem {
             /// agar tidak menumpuk saat row digunakan kembali
             firstRow.children.forEach { child in
                 if child.name == "obstacle" {
+                    obstacleEntities.removeAll { $0.node === child }
                     child.removeFromParent()
                 }
             }
@@ -532,6 +534,9 @@ extension SpawnSystem {
             )
             
             obstacle.zPosition = ZPosition.obstacle
+            
+            let obstacleEntity = ObstacleEntity(type: randomType, node: obstacle)
+            obstacleEntities.append(obstacleEntity)
             
             rowNode.addChild(obstacle)
             
