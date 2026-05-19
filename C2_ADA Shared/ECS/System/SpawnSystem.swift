@@ -301,6 +301,9 @@ extension SpawnSystem {
         let thresholdY: CGFloat = -100 
         
         vehicleEntities.removeAll { entity in
+            if entity.component(ofType: MovementComponent.self) != nil {
+                return false
+            }
             if entity.node.position.y < thresholdY {
                 entity.node.removeFromParent()
                 return true

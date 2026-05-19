@@ -45,19 +45,30 @@ final class LatchSystem {
     // MARK: - Latch Detection
 
     func canLatch(player: PlayerEntity, onto vehicle: VehicleEntity) -> Bool {
+        guard let scene = player.node.scene else { return false }
+        let playerSceneFrame = player.node.parent?.convert(player.node.calculateAccumulatedFrame(), to: scene) ?? .zero
+        let vehicleSceneFrame = vehicle.node.parent?.convert(vehicle.node.calculateAccumulatedFrame(), to: scene) ?? .zero
+        
+        let activeVehicleHitbox = vehicleSceneFrame.insetBy(dx: -configuration.latchDistance, dy: -configuration.latchDistance)
+        
+        let isAhead = vehicleSceneFrame.midY > playerSceneFrame.minY
+        let isVisible = vehicleSceneFrame.midY > -scene.size.height / 2
+        
+        return playerSceneFrame.intersects(activeVehicleHitbox) && isAhead && isVisible
         
         
-        let localPlayerFrame = player.node.calculateAccumulatedFrame()
-        let localVehicleFrame = vehicle.node.calculateAccumulatedFrame().insetBy(dx: -configuration.latchDistance, dy: -configuration.latchDistance)
-        
-        guard let playerParent = player.node.parent,
-              let vehicleParent = vehicle.node.parent,
-              playerParent !== vehicleParent else {
-            return localPlayerFrame.intersects(localVehicleFrame)
-        }
-    
-        
-        let convertedVehicleFrame = vehicleParent.convert(localVehicleFrame, to: playerParent)
+//        let localPlayerFrame = player.node.calculateAccumulatedFrame()
+//        let localVehicleFrame = vehicle.node.calculateAccumulatedFrame().insetBy(dx: -configuration.latchDistance, dy: -configuration.latchDistance)
+//        
+//        guard let playerParent = player.node.parent,
+//              let vehicleParent = vehicle.node.parent,
+//              playerParent !== vehicleParent else {
+//            return localPlayerFrame.intersects(localVehicleFrame)
+//        }
+//    
+//        
+//        let convertedVehicleFrame = vehicleParent.convert(localVehicleFrame, to: playerParent)
+        //        return localPlayerFrame.intersects(convertedVehicleFrame)
         
         
 //        let playerFrame = player.node.calculateAccumulatedFrame()
@@ -67,6 +78,6 @@ final class LatchSystem {
 //            dy: -configuration.latchDistance
 //        )
 
-        return localPlayerFrame.intersects(convertedVehicleFrame)
+
     }
 }

@@ -42,4 +42,13 @@ final class MovementSystem {
     func endSteering(vehicle: VehicleEntity) {
         vehicle.component(ofType: MovementComponent.self)?.endDrag()
     }
+    
+    // MARK: - Update Linear Interpolation
+    
+    func updateLerp(vehicle: VehicleEntity, deltaTime: TimeInterval) {
+        if let movement = vehicle.component(ofType: MovementComponent.self) {
+            movement.updateLerp(deltaTime: deltaTime)
+            vehicle.setPosition(movement.position)
+        }
+    }
 }

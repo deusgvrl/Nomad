@@ -44,7 +44,7 @@ final class GameScene: SKScene {
     private var gameState: GameState = .waitingToStart
     private var playerState: PlayerState = .idle
     private var playerEntity: PlayerEntity?
-    private var currentVehicleEntity: VehicleEntity?
+    private var currentVehicleEntity: VehicleEntity? // This is already optional
     private var gameOverOverlayNode: SKNode?
     private var lastUpdateTime: TimeInterval = 0
 
@@ -89,12 +89,21 @@ final class GameScene: SKScene {
     }
 
     override func update(_ currentTime: TimeInterval) {
+        let deltaTime = makeDeltaTime(from: currentTime)
         spawnSystem?.update(currentTime)
         updateJumpingPlayer(currentTime)
         
-        if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
-            player.place(on: vehicle)
+        if let vehicle = currentVehicleEntity, let player = playerEntity {
+            if playerState == .riding {
+                movementSystem.updateLerp(vehicle: vehicle, deltaTime: deltaTime)
+                player.place(on: vehicle)
+            }
+
         }
+        
+//        if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
+//            player.place(on: vehicle)
+//        }
         
     }
 
@@ -288,7 +297,21 @@ private extension GameScene {
         case .released where gameState == .playing && playerState == .riding:
             // Releasing detaches the player and starts the forward jump arc.
             movementSystem.endSteering(vehicle: currentVehicleEntity)
+        
+    
+            spawnSystem?.adopt(oldVehicle: currentVehicleEntity)
+                
+            currentVehicleEntity.removeComponent(ofType: MovementComponent.self)
+                
+            // Creating a new MovementComponent with speed: 0 for a receding movement.
+            let recedingMovement = MovementComponent(speed: 0)
+            currentVehicleEntity.addComponent(recedingMovement)
+            
+            
+            
             launchSystem?.launch(player: playerEntity)
+            
+            playerEntity.playJumpVisual()
             playerState = .jumping
 
         case .holding(let startLocation) where gameState == .playing && playerState == .jumping:
@@ -335,31 +358,38 @@ private extension GameScene {
         guard let playerEntity else { return }
         
         // 1. Remove the old vehicle from the scene
-        if let oldVehicle = currentVehicleEntity {
-            oldVehicle.node.removeFromParent()
-            spawnSystem?.removeVehicle(entity: oldVehicle)
-        }
+//        if let oldVehicle = currentVehicleEntity {
+//            oldVehicle.node.removeFromParent()
+//            spawnSystem?.removeVehicle(entity: oldVehicle)
+//        }
         
         // 2. Remove new vehicle from SpawnSystem's automatic flow
         spawnSystem?.removeVehicle(entity: vehicle)
         
         // 3. Move the new vehicle to the initial spawn position
         let newParent = gameplayNode
-        vehicle.node.removeFromParent()
-        vehicle.node.position = configuration.currentVehiclePosition
-        newParent.addChild(vehicle.node)
-        
+        if let oldParent = vehicle.node.parent, oldParent !== newParent {
+            let interceptedPos = oldParent.convert(vehicle.node.position, to: newParent)
+            vehicle.node.removeFromParent()
+            vehicle.node.position = interceptedPos
+//            vehicle.node.position = configuration.currentVehiclePosition
+            newParent.addChild(vehicle.node)
+            
+        }
+
         vehicle.node.zPosition = ZPosition.vehicle
         
         // 4. Initialize steering starting from the spawn position
         let steering = MovementComponent(
-            position: configuration.currentVehiclePosition,
+            anchorPosition: configuration.currentVehiclePosition,
+            currentPosition: vehicle.node.position,
             screenSize: configuration.referenceScreenSize,
             vehicleSize: configuration.vehicleSize,
             movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
             movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
             dragSensitivity: configuration.dragSensitivity
         )
+        steering.startLerping(to: configuration.currentVehiclePosition)
         vehicle.addComponent(steering)
         
         // 5. Attach player (this also reparents player to the vehicle)
