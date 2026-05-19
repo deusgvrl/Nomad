@@ -67,6 +67,7 @@ final class LaunchSystem {
 
     private var launchForwardXVelocity: CGFloat {
         let radians = Double(configuration.launchForwardAngleInDegrees) * Double.pi / 180
+        
         return configuration.launchVelocity / CGFloat(tan(radians))
     }
 }

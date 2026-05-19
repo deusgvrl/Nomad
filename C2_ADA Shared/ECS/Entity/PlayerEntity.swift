@@ -94,4 +94,16 @@ final class PlayerEntity: GKEntity {
 
         return playerNode
     }
+    
+    // MARK: - Visual Animation
+    func playJumpVisual() {
+        let grow = SKAction.scale(to: 1.5, duration: 0.25)
+        grow.timingMode = .easeOut
+        
+        let shrink = SKAction.scale(to: 1.0, duration: 0.25)
+        shrink.timingMode = .easeIn
+        
+        let sequence = SKAction.sequence([grow, shrink])
+        node.run(sequence)
+    }
 }
