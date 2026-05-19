@@ -36,13 +36,17 @@ final class LaunchSystem {
 
     // MARK: - Launch Start
 
-    func launch(player: PlayerEntity) {
+    func launch(player: PlayerEntity, landingTargetPosition: CGPoint? = nil) {
         player.detachFromVehicle()
         player.component(ofType: LaunchComponent.self)?.launch(
             from: player.node.position,
-            horizontalVelocity: launchForwardXVelocity,
+            horizontalVelocity: launchForwardXVelocity(
+                from: player.node.position,
+                to: landingTargetPosition
+            ),
             verticalVelocity: configuration.launchVelocity,
-            forwardYVelocity: configuration.launchForwardThrust
+            forwardYVelocity: configuration.launchForwardThrust,
+            landingTargetPosition: landingTargetPosition
         )
     }
 
@@ -60,13 +64,52 @@ final class LaunchSystem {
         )
         player.node.position = position
 
+        if let landingTargetPosition = launchComponent.landingTargetPosition,
+           launchComponent.isDescending,
+           position.y <= landingTargetPosition.y {
+            player.node.position = landingTargetPosition
+            return .fell
+        }
+
         return position.y <= configuration.groundYPosition ? .fell : .airborne
     }
 
     // MARK: - Isometric Forward Motion
 
-    private var launchForwardXVelocity: CGFloat {
+    private func launchForwardXVelocity(
+        from startPosition: CGPoint,
+        to landingTargetPosition: CGPoint?
+    ) -> CGFloat {
+        guard let landingTargetPosition else {
+            return defaultLaunchForwardXVelocity
+        }
+
+        // MARK: Fall Targeting
+        // The fall branch should visibly land in front of the active car.
+        // Calculating X velocity from the target prevents off-screen drift and
+        // removes the old game-over snap-back.
+        let targetAirTime = estimatedAirTime(
+            from: startPosition,
+            to: landingTargetPosition
+        )
+        return (landingTargetPosition.x - startPosition.x) / targetAirTime
+    }
+
+    private var defaultLaunchForwardXVelocity: CGFloat {
         let radians = Double(configuration.launchForwardAngleInDegrees) * Double.pi / 180
         return configuration.launchVelocity / CGFloat(tan(radians))
+    }
+
+    private func estimatedAirTime(
+        from startPosition: CGPoint,
+        to landingTargetPosition: CGPoint
+    ) -> CGFloat {
+        let initialYVelocity = configuration.launchVelocity + configuration.launchForwardThrust
+        let targetYDelta = landingTargetPosition.y - startPosition.y
+        let gravity = configuration.launchGravity
+        let discriminant = max(0, (initialYVelocity * initialYVelocity) - (2 * gravity * targetYDelta))
+        let descendingTime = (initialYVelocity + discriminant.squareRoot()) / gravity
+
+        return max(descendingTime, CGFloat(configuration.maximumDeltaTime))
     }
 }

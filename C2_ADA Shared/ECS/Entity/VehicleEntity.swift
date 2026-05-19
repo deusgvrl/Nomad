@@ -45,7 +45,7 @@ final class VehicleEntity: GKEntity {
         let steering = MovementComponent(
             position: configuration.currentVehiclePosition,
             screenSize: configuration.referenceScreenSize,
-            vehicleSize: configuration.vehicleSize,
+            vehicleSize: configuration.vehicleMovementBoundsSize,
             movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
             movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
             dragSensitivity: configuration.dragSensitivity
