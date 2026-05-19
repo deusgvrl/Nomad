@@ -30,6 +30,7 @@ final class GameScene: SKScene {
     private let launchSystem: LaunchSystem?
     private let latchSystem: LatchSystem?
     private let distanceScoreSystem = DistanceScoreSystem()
+    private let collisionSystem = CollisionSystem()
 
     // MARK: - World Container
 
@@ -99,8 +100,7 @@ final class GameScene: SKScene {
     }
 
     override func update(_ currentTime: TimeInterval) {
-        let deltaTime = makeDeltaTime(from: currentTime)
-        guard gameState != .gameOver else { return }
+        guard gameState == .playing else { return }
 
         spawnSystem?.update(currentTime)
         updateDistanceScore(deltaTime)
@@ -108,7 +108,52 @@ final class GameScene: SKScene {
 
         if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
             player.place(on: vehicle)
+
+            // --- DEBUG: Show vehicle hitbox (OFF) ---
+            // vehicle.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: vehicle.node, color: .green)
+
+            // 1. Cek tabrakan dengan rintangan (Batu, Pohon, dll)
+            if let obstacles = spawnSystem?.obstacleEntities {
+
+                // --- DEBUG: Show all obstacle hitboxes (OFF) ---
+                /*
+                for obs in obstacles {
+                    obs.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: obs.node, color: .red)
+                }
+                */
+
+                if let hitObstacle = collisionSystem.checkCollision(vehicle: vehicle, with: obstacles) {
+                    print("Collision with \(hitObstacle.type.rawValue)")
+                    
+                    // TODO: Replace this pause logic with a formal Game Over sequence/Scene transition
+                    gameState = .gameOver
+                    playerState = .crashed
+                }
+            }
+
+            // 2. Cek tabrakan antar kendaraan (Mobil pemain vs Mobil lain)
+            // PERBAIKAN: Sekarang mobil bisa saling bertabrakan jika berada di jalur yang sama.
+            if let others = spawnSystem?.vehicleEntities {
+
+                // --- DEBUG: Show other vehicle hitboxes (OFF) ---
+                /*
+                for other in others {
+                    if other !== vehicle {
+                        other.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: other.node, color: .blue)
+                    }
+                }
+                */
+
+                if collisionSystem.checkVehicleCollision(playerVehicle: vehicle, with: others) != nil {
+                    print("Collision with another vehicle!")
+                    
+                    // TODO: Replace this pause logic with a formal Game Over sequence/Scene transition
+                    gameState = .gameOver
+                    playerState = .crashed
+                }
+            }
         }
+
     }
 
     // MARK: - Touch Input
@@ -377,20 +422,24 @@ private extension GameScene {
     func completeLatch(on vehicle: VehicleEntity, startLocation: CGPoint? = nil) {
         guard let playerEntity else { return }
         
-        if let currentVehicleEntity, currentVehicleEntity !== vehicle {
-            spawnSystem?.adopt(oldVehicle: currentVehicleEntity)
-            currentVehicleEntity.removeComponent(ofType: MovementComponent.self)
+        // 1. Remove the old vehicle from the scene
+        if let oldVehicle = currentVehicleEntity {
+            oldVehicle.node.removeFromParent()
+            spawnSystem?.removeVehicle(entity: oldVehicle)
         }
         
+        // 2. Remove new vehicle from SpawnSystem's automatic flow
+        spawnSystem?.removeVehicle(entity: vehicle)
+        
+        // 3. Move the new vehicle to the initial spawn position
         let newParent = gameplayNode
-        if let oldParent = vehicle.node.parent, oldParent !== newParent {
-            vehicle.node.removeFromParent()
-            vehicle.node.position = configuration.currentVehiclePosition
-            newParent.addChild(vehicle.node)
-        }
+        vehicle.node.removeFromParent()
+        vehicle.node.position = configuration.currentVehiclePosition
+        newParent.addChild(vehicle.node)
         
         vehicle.node.zPosition = ZPosition.vehicle
         
+        // 4. Initialize steering starting from the spawn position
         let steering = MovementComponent(
             position: configuration.currentVehiclePosition,
             screenSize: configuration.referenceScreenSize,
@@ -401,12 +450,14 @@ private extension GameScene {
         )
         vehicle.addComponent(steering)
         
+        // 5. Attach player (this also reparents player to the vehicle)
         playerEntity.attach(to: vehicle)
         currentVehicleEntity = vehicle
         
         if let startLocation {
             movementSystem.beginSteering(vehicle: vehicle, at: startLocation)
         }
+        
         gameState = .playing
         playerState = .riding
     }

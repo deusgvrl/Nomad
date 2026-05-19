@@ -33,6 +33,18 @@ final class VehicleEntity: GKEntity {
         if let movement = movementComponent {
             addComponent(movement)
         }
+
+        // Use custom hitbox values if the node is a VehicleNode
+        if let vehicleNode = node as? VehicleNode {
+            // MENGAMBIL: Array berisi banyak bentuk kotak tabrakan dari Enum VehicleType
+            addComponent(HitboxComponent(shapes: vehicleNode.vehicleType.hitboxShapes))
+        } else {
+            // Fallback for generic nodes (tetap menggunakan satu kotak default)
+            let hitboxWidth = node.frame.width * 0.7
+            let hitboxHeight = node.frame.height * 0.4
+            let hitboxOffset = CGPoint(x: 0, y: hitboxHeight / 2)
+            addComponent(HitboxComponent(size: CGSize(width: hitboxWidth, height: hitboxHeight), offset: hitboxOffset))
+        }
     }
     
     convenience init(configuration: GameConfiguration){
@@ -92,15 +104,15 @@ final class VehicleEntity: GKEntity {
 
     // MARK: - Vehicle Art
 
-    /// Builds the current car sprite from the asset catalog.
+    /// Builds the current car sprite using the specialized VehicleNode class.
     ///
-    /// This is the line that calls the vehicle asset:
-    /// `SKSpriteNode(imageNamed: NomadAsset.carIdle.rawValue)`.
+    /// PERBAIKAN: Sebelumnya ini menggunakan SKSpriteNode biasa dengan anchor point (0.5, 0.5).
+    /// Sekarang menggunakan VehicleNode agar anchor point (0.5, 0.15) dan pengaturan hitbox
+    /// konsisten antara mobil awal dan mobil yang di-spawn kemudian.
     private static func makeVehicleNode(configuration: GameConfiguration) -> SKNode {
-        let vehicleNode = SKSpriteNode(imageNamed: NomadAsset.carIdle.rawValue)
-        vehicleNode.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        let vehicleNode = VehicleNode(type: .car)
+        // Ukuran diambil dari konfigurasi game agar tetap fleksibel
         vehicleNode.size = configuration.vehicleSize
-
         return vehicleNode
     }
 }
