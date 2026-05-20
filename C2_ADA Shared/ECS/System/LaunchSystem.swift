@@ -76,6 +76,8 @@ final class LaunchSystem {
         // Use the same fixed X velocity as `dev`, derived from the 60-degree
         // launch angle, so jumps behave consistently before latching.
         let radians = Double(configuration.launchForwardAngleInDegrees) * Double.pi / 180
+        
         return configuration.launchVelocity / CGFloat(tan(radians))
     }
 }
+
