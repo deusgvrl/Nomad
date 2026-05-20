@@ -48,6 +48,9 @@ final class GameScene: SKScene {
     private var currentVehicleEntity: VehicleEntity?
     private var gameOverOverlayNode: SKNode?
     private var lastUpdateTime: TimeInterval = 0
+    
+    // Properti untuk menyimpan instance menu utama
+    private var menuScreen: MenuScreen?
 
     // MARK: - Scene Factory
 
@@ -148,7 +151,19 @@ final class GameScene: SKScene {
     // MARK: - Touch Input
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+
         guard let touch = touches.first else { return }
+
+        let locationInScene = touch.location(in: self)
+
+        // MENU SCREEN INPUT
+        if let menuScreen {
+
+            menuScreen.handleTouch(at: locationInScene)
+
+            return
+        }
+
         handle(inputSystem.begin(at: touch.location(in: gameplayNode)))
     }
 
@@ -184,7 +199,7 @@ private extension GameScene {
         setUpSpawnSystem()
         setUpMovementPrototype()
         setUpMovementBoundsGuide()
-
+        showMenuScreen()
         gameOverOverlayNode = nil
         gameState = .waitingToStart
         playerState = .idle
@@ -511,5 +526,34 @@ private extension GameScene {
 
         gameOverOverlayNode = overlayNode
         addChild(overlayNode)
+    }
+}
+
+
+// MARK: - Menu Screen
+
+private extension GameScene {
+
+    // Menampilkan layar menu utama saat game dimulai
+    func showMenuScreen() {
+
+        let menu = MenuScreen(sceneSize: size)
+
+        menu.onStartTapped = { [weak self] in
+
+            guard let self else { return }
+
+            self.gameState = .waitingToStart
+            self.menuScreen = nil
+        }
+
+        menu.onSettingsTapped = {
+
+            print("Settings tapped")
+        }
+
+        menu.show(in: self)
+
+        self.menuScreen = menu
     }
 }
