@@ -36,17 +36,16 @@ final class LaunchSystem {
 
     // MARK: - Launch Start
 
-    func launch(player: PlayerEntity, landingTargetPosition: CGPoint? = nil) {
+    func launch(player: PlayerEntity) {
+        // MARK: Dev Jump Launch
+        // Match `dev`: release only detaches the rider and applies the fixed
+        // launch velocities. It does not calculate a target landing position.
         player.detachFromVehicle()
         player.component(ofType: LaunchComponent.self)?.launch(
             from: player.node.position,
-            horizontalVelocity: launchForwardXVelocity(
-                from: player.node.position,
-                to: landingTargetPosition
-            ),
+            horizontalVelocity: launchForwardXVelocity,
             verticalVelocity: configuration.launchVelocity,
-            forwardYVelocity: configuration.launchForwardThrust,
-            landingTargetPosition: landingTargetPosition
+            forwardYVelocity: configuration.launchForwardThrust
         )
     }
 
@@ -64,52 +63,19 @@ final class LaunchSystem {
         )
         player.node.position = position
 
-        if let landingTargetPosition = launchComponent.landingTargetPosition,
-           launchComponent.isDescending,
-           position.y <= landingTargetPosition.y {
-            player.node.position = landingTargetPosition
-            return .fell
-        }
-
+        // MARK: Dev Fall Check
+        // Match `dev`: the launch remains airborne until the player crosses the
+        // prototype ground line, then GameScene decides the game-over response.
         return position.y <= configuration.groundYPosition ? .fell : .airborne
     }
 
     // MARK: - Isometric Forward Motion
 
-    private func launchForwardXVelocity(
-        from startPosition: CGPoint,
-        to landingTargetPosition: CGPoint?
-    ) -> CGFloat {
-        guard let landingTargetPosition else {
-            return defaultLaunchForwardXVelocity
-        }
-
-        // MARK: Fall Targeting
-        // The fall branch should visibly land in front of the active car.
-        // Calculating X velocity from the target prevents off-screen drift and
-        // removes the old game-over snap-back.
-        let targetAirTime = estimatedAirTime(
-            from: startPosition,
-            to: landingTargetPosition
-        )
-        return (landingTargetPosition.x - startPosition.x) / targetAirTime
-    }
-
-    private var defaultLaunchForwardXVelocity: CGFloat {
+    private var launchForwardXVelocity: CGFloat {
+        // MARK: Dev Forward Velocity
+        // Use the same fixed X velocity as `dev`, derived from the 60-degree
+        // launch angle, so jumps behave consistently before latching.
         let radians = Double(configuration.launchForwardAngleInDegrees) * Double.pi / 180
         return configuration.launchVelocity / CGFloat(tan(radians))
-    }
-
-    private func estimatedAirTime(
-        from startPosition: CGPoint,
-        to landingTargetPosition: CGPoint
-    ) -> CGFloat {
-        let initialYVelocity = configuration.launchVelocity + configuration.launchForwardThrust
-        let targetYDelta = landingTargetPosition.y - startPosition.y
-        let gravity = configuration.launchGravity
-        let discriminant = max(0, (initialYVelocity * initialYVelocity) - (2 * gravity * targetYDelta))
-        let descendingTime = (initialYVelocity + discriminant.squareRoot()) / gravity
-
-        return max(descendingTime, CGFloat(configuration.maximumDeltaTime))
     }
 }

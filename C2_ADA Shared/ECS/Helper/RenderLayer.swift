@@ -1,19 +1,21 @@
 //
-//  ZPosition.swift
+//  RenderLayer.swift
 //  C2_ADA Shared
 //
-//  Created by Howie Homan on 07/05/26.
+//  Created by Howie Homan on 20/05/26.
 //
 
 import CoreGraphics
 
-// MARK: - Z Position
+// MARK: - Render Layer
 
-/// Shared SpriteKit draw layers.
+/// Shared SpriteKit draw-order layers for gameplay and UI.
 ///
-/// Higher numbers render above lower numbers. Keeping them here avoids random
-/// zPosition values throughout the scene.
-enum ZPosition {
+/// `RenderLayer` replaces the older `ZPosition` name because the purpose is to
+/// decide which objects render above others. The numeric values are unchanged
+/// so floor, walls, vehicles, player, obstacles, and overlays keep their order.
+enum RenderLayer {
+
     // MARK: - World Layers
 
     static let floor: CGFloat = 10

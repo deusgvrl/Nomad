@@ -8,8 +8,6 @@
 import Foundation
 import SpriteKit
 import GameplayKit
-import UIKit
-import CoreText
 
 // MARK: - Game Scene
 
@@ -18,18 +16,18 @@ import CoreText
 /// This file is the merged scene:
 /// - keeps the newer `worldNode` and `SpawnSystem` structure from `UI/Scene`;
 /// - brings in the old prototype's hold, drag, release, jump, and latch logic;
-/// - owns the fall game-over flow and overlay while obstacle collision is still
-///   being finished on another branch.
+/// - routes Game Over transitions to `GameScene+GameOver.swift` and the
+///   `GameOverScreen` overlay.
 final class GameScene: SKScene {
 
     // MARK: - Dependencies
 
-    private let configuration: GameConfiguration
+    let configuration: GameConfiguration
     private let inputSystem = InputSystem()
-    private let movementSystem: MovementSystem
+    let movementSystem: MovementSystem
     private let launchSystem: LaunchSystem?
     private let latchSystem: LatchSystem?
-    private let distanceScoreSystem = DistanceScoreSystem()
+    let distanceScoreSystem = DistanceScoreSystem()
     private let collisionSystem = CollisionSystem()
 
     // MARK: - World Container
@@ -46,18 +44,12 @@ final class GameScene: SKScene {
 
     // MARK: - Runtime State
 
-    private var gameState: GameState = .waitingToStart
-    private var playerState: PlayerState = .idle
-    private var playerEntity: PlayerEntity?
-    private var currentVehicleEntity: VehicleEntity?
-    private var gameOverOverlayNode: SKNode?
-    private var gameOverRetryButtonNode: SKNode?
-    private var gameOverHomeButtonNode: SKNode?
+    var gameState: GameState = .waitingToStart
+    var playerState: PlayerState = .idle
+    var playerEntity: PlayerEntity?
+    var currentVehicleEntity: VehicleEntity?
+    var gameOverScreen: GameOverScreen?
     private var lastUpdateTime: TimeInterval = 0
-
-    /// Prevents CoreText from re-registering the same whole-game fonts every
-    /// time the scene resets after Try Again.
-    private static var didRegisterGameFonts = false
 
     // MARK: - Scene Factory
 
@@ -100,6 +92,10 @@ final class GameScene: SKScene {
     }
 
     override func update(_ currentTime: TimeInterval) {
+        // MARK: Frame Delta
+        // SpriteKit gives absolute time here, so convert it to a capped delta
+        // before physics uses it. Passing absolute time made jumps fly too far.
+        let deltaTime = makeDeltaTime(from: currentTime)
         guard gameState == .playing else { return }
 
         spawnSystem?.update(currentTime)
@@ -109,49 +105,11 @@ final class GameScene: SKScene {
         if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
             player.place(on: vehicle)
 
-            // --- DEBUG: Show vehicle hitbox (OFF) ---
-            // vehicle.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: vehicle.node, color: .green)
-
-            // 1. Cek tabrakan dengan rintangan (Batu, Pohon, dll)
-            if let obstacles = spawnSystem?.obstacleEntities {
-
-                // --- DEBUG: Show all obstacle hitboxes (OFF) ---
-                /*
-                for obs in obstacles {
-                    obs.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: obs.node, color: .red)
-                }
-                */
-
-                if let hitObstacle = collisionSystem.checkCollision(vehicle: vehicle, with: obstacles) {
-                    print("Collision with \(hitObstacle.type.rawValue)")
-                    
-                    // TODO: Replace this pause logic with a formal Game Over sequence/Scene transition
-                    gameState = .gameOver
-                    playerState = .crashed
-                }
-            }
-
-            // 2. Cek tabrakan antar kendaraan (Mobil pemain vs Mobil lain)
-            // PERBAIKAN: Sekarang mobil bisa saling bertabrakan jika berada di jalur yang sama.
-            if let others = spawnSystem?.vehicleEntities {
-
-                // --- DEBUG: Show other vehicle hitboxes (OFF) ---
-                /*
-                for other in others {
-                    if other !== vehicle {
-                        other.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: other.node, color: .blue)
-                    }
-                }
-                */
-
-                if collisionSystem.checkVehicleCollision(playerVehicle: vehicle, with: others) != nil {
-                    print("Collision with another vehicle!")
-                    
-                    // TODO: Replace this pause logic with a formal Game Over sequence/Scene transition
-                    gameState = .gameOver
-                    playerState = .crashed
-                }
-            }
+            // MARK: Riding Collision Game Over
+            // CollisionSystem checks the active vehicle's hitboxes while the
+            // player is riding. A collision now flows through the real game-over
+            // entry instead of only flipping state.
+            if updateCollisionGameOverIfNeeded(for: vehicle) { return }
         }
 
     }
@@ -192,10 +150,10 @@ final class GameScene: SKScene {
 
 // MARK: - Scene Setup
 
-private extension GameScene {
+extension GameScene {
 
     func setUpScene() {
-        registerGameFontsIfNeeded()
+        GameFontRegistry.registerGameFontsIfNeeded(configuration: configuration)
 
         removeAllChildren()
         worldNode.removeAllChildren()
@@ -209,14 +167,15 @@ private extension GameScene {
         setUpMovementPrototype()
         setUpMovementBoundsGuide()
 
-        gameOverOverlayNode = nil
-        gameOverRetryButtonNode = nil
-        gameOverHomeButtonNode = nil
+        gameOverScreen = nil
         gameState = .waitingToStart
         playerState = .idle
         lastUpdateTime = 0
         distanceScoreSystem.resetRun()
     }
+}
+
+private extension GameScene {
 
     func setUpNodes() {
         // This keeps the setup shape from `dev`:
@@ -231,12 +190,12 @@ private extension GameScene {
             x: 0,
             y: -size.height * 0.8
         )
-        worldNode.zPosition = ZPosition.floor
+        worldNode.zPosition = RenderLayer.floor
         addChild(worldNode)
 
         gameplayNode.name = "gameplay"
         gameplayNode.position = .zero
-        gameplayNode.zPosition = ZPosition.vehicle
+        gameplayNode.zPosition = RenderLayer.vehicle
         addChild(gameplayNode)
     }
 
@@ -281,7 +240,7 @@ private extension GameScene {
         guideNode.strokeColor = SKColor.white.withAlphaComponent(0.85)
         guideNode.lineWidth = 4
         guideNode.lineCap = .round
-        guideNode.zPosition = ZPosition.overlay
+        guideNode.zPosition = RenderLayer.overlay
         gameplayNode.addChild(guideNode)
 
         addMovementBoundCap(at: configuration.movementAxisStartPosition)
@@ -295,7 +254,7 @@ private extension GameScene {
         capNode.fillColor = SKColor(red: 1.00, green: 0.86, blue: 0.24, alpha: 1.0)
         capNode.strokeColor = SKColor.white.withAlphaComponent(0.9)
         capNode.lineWidth = 2
-        capNode.zPosition = ZPosition.overlay
+        capNode.zPosition = RenderLayer.overlay
         gameplayNode.addChild(capNode)
     }
 }
@@ -303,6 +262,56 @@ private extension GameScene {
 // MARK: - Frame Update
 
 private extension GameScene {
+
+    // MARK: - Collision Game Over
+
+    func updateCollisionGameOverIfNeeded(for vehicle: VehicleEntity) -> Bool {
+        // MARK: Obstacle Collision Priority
+        // Obstacles are the primary crash rule; check them first so the debug
+        // message and player state describe the obstacle hit.
+        if updateObstacleCollisionGameOverIfNeeded(for: vehicle) {
+            return true
+        }
+
+        // MARK: Vehicle Collision Priority
+        // The existing collision system also supports vehicle-to-vehicle hits,
+        // so route those through the same game-over overlay path.
+        return updateVehicleCollisionGameOverIfNeeded(for: vehicle)
+    }
+
+    func updateObstacleCollisionGameOverIfNeeded(for vehicle: VehicleEntity) -> Bool {
+        guard let obstacles = spawnSystem?.obstacleEntities,
+              let hitObstacle = collisionSystem.checkCollision(
+                vehicle: vehicle,
+                with: obstacles
+              ) else {
+            return false
+        }
+
+        // MARK: Obstacle Crash Result
+        // Use the formal game-over flow so obstacle crashes show score,
+        // highscore, retry, and home UI just like fall game over.
+        print("Collision with \(hitObstacle.type.rawValue)")
+        enterGameOver(playerEndState: .crashed)
+        return true
+    }
+
+    func updateVehicleCollisionGameOverIfNeeded(for vehicle: VehicleEntity) -> Bool {
+        guard let otherVehicles = spawnSystem?.vehicleEntities,
+              collisionSystem.checkVehicleCollision(
+                playerVehicle: vehicle,
+                with: otherVehicles
+              ) != nil else {
+            return false
+        }
+
+        // MARK: Vehicle Crash Result
+        // Keep car-to-car collision consistent with obstacle crashes when the
+        // collision system reports another vehicle hit.
+        print("Collision with another vehicle!")
+        enterGameOver(playerEndState: .crashed)
+        return true
+    }
 
     // MARK: - Distance Score Preview
 
@@ -381,13 +390,10 @@ private extension GameScene {
         case .released where gameState == .playing && playerState == .riding:
             // Releasing detaches the player and starts the forward jump arc.
             movementSystem.endSteering(vehicle: currentVehicleEntity)
-            launchSystem?.launch(
-                player: playerEntity,
-                landingTargetPosition: fallLandingPosition(
-                    for: playerEntity,
-                    vehicle: currentVehicleEntity
-                )
-            )
+            // MARK: Dev Jump Release
+            // Use the same untargeted launch arc as `dev`; game-over landing
+            // logic should not influence the jump while latching is still possible.
+            launchSystem?.launch(player: playerEntity)
             playerState = .jumping
 
         case .holding(let startLocation) where gameState == .playing && playerState == .jumping:
@@ -422,24 +428,37 @@ private extension GameScene {
     func completeLatch(on vehicle: VehicleEntity, startLocation: CGPoint? = nil) {
         guard let playerEntity else { return }
         
-        // 1. Remove the old vehicle from the scene
-        if let oldVehicle = currentVehicleEntity {
-            oldVehicle.node.removeFromParent()
+        // MARK: Old Vehicle Cleanup
+        // Remove the previously ridden car when the player latches to a new car.
+        // Re-adding it to the scrolling world creates the extra car beside the
+        // player after every successful jump.
+        if let oldVehicle = currentVehicleEntity, oldVehicle !== vehicle {
+            movementSystem.endSteering(vehicle: oldVehicle)
+            oldVehicle.removeComponent(ofType: MovementComponent.self)
             spawnSystem?.removeVehicle(entity: oldVehicle)
+            oldVehicle.node.removeFromParent()
         }
-        
-        // 2. Remove new vehicle from SpawnSystem's automatic flow
+
+        // MARK: Merged Spawn-System Safety
+        // This branch's SpawnSystem auto-moves spawned vehicles. Once a vehicle
+        // becomes the active player car, remove it from that automatic flow.
         spawnSystem?.removeVehicle(entity: vehicle)
         
-        // 3. Move the new vehicle to the initial spawn position
+        // MARK: Dev New Vehicle Parenting
+        // Match `dev`: move the latched vehicle into gameplayNode only when it
+        // came from another parent, then place it at the active vehicle slot.
         let newParent = gameplayNode
-        vehicle.node.removeFromParent()
-        vehicle.node.position = configuration.currentVehiclePosition
-        newParent.addChild(vehicle.node)
+        if let oldParent = vehicle.node.parent, oldParent !== newParent {
+            vehicle.node.removeFromParent()
+            vehicle.node.position = configuration.currentVehiclePosition
+            newParent.addChild(vehicle.node)
+        }
         
-        vehicle.node.zPosition = ZPosition.vehicle
+        vehicle.node.zPosition = RenderLayer.vehicle
         
-        // 4. Initialize steering starting from the spawn position
+        // MARK: Dev Steering Rebuild
+        // Rebuild steering on the new vehicle so dragging continues from the
+        // same starting slot after a successful latch.
         let steering = MovementComponent(
             position: configuration.currentVehiclePosition,
             screenSize: configuration.referenceScreenSize,
@@ -450,14 +469,15 @@ private extension GameScene {
         )
         vehicle.addComponent(steering)
         
-        // 5. Attach player (this also reparents player to the vehicle)
+        // MARK: Dev Latch Completion
+        // Attach the player to the new vehicle and optionally continue steering
+        // from the touch that triggered the latch.
         playerEntity.attach(to: vehicle)
         currentVehicleEntity = vehicle
         
         if let startLocation {
             movementSystem.beginSteering(vehicle: vehicle, at: startLocation)
         }
-        
         gameState = .playing
         playerState = .riding
     }
@@ -479,7 +499,7 @@ private extension GameScene {
 //            oldParent.addChild(vehicle.node)
 //            
 //            currentVehicleEntity.node.zPosition = 100
-//            vehicle.node.zPosition = ZPosition.vehicle
+//            vehicle.node.zPosition = RenderLayer.vehicle
 //            
 //            currentVehicleEntity.removeComponent(ofType: MovementComponent.self)
 //            
@@ -497,423 +517,10 @@ private extension GameScene {
 //    }
 
 
-// MARK: - Game Over Logic
-
-private extension GameScene {
-
-    // MARK: - Game Over Entry
-
-    /// Ends the run, settles the player in front of the car, and shows the
-    /// result overlay. Obstacle collision can call this same entry later.
-    func enterGameOver(playerEndState: PlayerState = .crashed) {
-        guard gameState != .gameOver else { return }
-
-        gameState = .gameOver
-        playerState = playerEndState
-
-        if let currentVehicleEntity {
-            movementSystem.endSteering(vehicle: currentVehicleEntity)
-        }
-
-        playerEntity?.component(ofType: LaunchComponent.self)?.reset()
-
-        let scoreResult = distanceScoreSystem.finishRun()
-        settlePlayerInFrontOfVehicle { [weak self] in
-            self?.showGameOverOverlay(scoreResult: scoreResult)
-        }
-    }
-
-    // MARK: - Fall Landing
-
-    /// Snaps the failed jump back to a readable spot near the active car.
-    /// This avoids the old off-screen X-axis drift from the launch velocity.
-    func settlePlayerInFrontOfVehicle(completion: @escaping () -> Void) {
-        guard let playerEntity, let currentVehicleEntity else {
-            completion()
-            return
-        }
-
-        let landingPosition = fallLandingPosition(
-            for: playerEntity,
-            vehicle: currentVehicleEntity
-        )
-
-        playerEntity.node.removeAllActions()
-        playerEntity.node.zPosition = ZPosition.player
-
-        let settleAction = SKAction.move(
-            to: landingPosition,
-            duration: configuration.playerFallSettleDuration
-        )
-        settleAction.timingMode = .easeOut
-        playerEntity.node.run(settleAction, completion: completion)
-    }
-
-    /// Projects the failed jump from the player's current position along the
-    /// same 60-degree road-forward line used by latch filtering.
-    func fallLandingPosition(for player: PlayerEntity, vehicle _: VehicleEntity) -> CGPoint {
-        let playerPosition = player.node.position
-        let proposedPosition = configuration.jumpForwardLandingPosition(from: playerPosition)
-
-        return clampedPlayerPosition(proposedPosition)
-    }
-
-    /// Keeps the settled player visible even if the car was near a screen edge.
-    func clampedPlayerPosition(_ position: CGPoint) -> CGPoint {
-        let halfPlayerWidth = configuration.playerSize.width / 2
-        let halfPlayerHeight = configuration.playerSize.height / 2
-        let xBounds = (-size.width / 2 + halfPlayerWidth)...(size.width / 2 - halfPlayerWidth)
-        let yBounds = (-size.height / 2 + halfPlayerHeight)...(size.height / 2 - halfPlayerHeight)
-
-        return CGPoint(
-            x: min(max(position.x, xBounds.lowerBound), xBounds.upperBound),
-            y: min(max(position.y, yBounds.lowerBound), yBounds.upperBound)
-        )
-    }
-
-    // MARK: - Game Over Overlay
-
-    /// Builds the full-screen overlay shown in the design reference.
-    func showGameOverOverlay(scoreResult: ScoreResult) {
-        guard gameOverOverlayNode == nil else { return }
-
-        let overlayNode = SKNode()
-        overlayNode.name = "gameOverOverlay"
-        overlayNode.zPosition = ZPosition.gameOverOverlay
-        overlayNode.alpha = 0
-
-        overlayNode.addChild(makeGameOverDimLayer())
-        overlayNode.addChild(makeGameOverTitle())
-
-        if scoreResult.isNewHighScore {
-            addNewHighScoreContent(to: overlayNode, scoreResult: scoreResult)
-        } else {
-            addRegularHighScoreContent(to: overlayNode, scoreResult: scoreResult)
-        }
-
-        let retryButton = makeTryAgainButton()
-        overlayNode.addChild(retryButton)
-        gameOverRetryButtonNode = retryButton
-
-        let homeButton = makeHomeButton()
-        overlayNode.addChild(homeButton)
-        gameOverHomeButtonNode = homeButton
-
-        gameOverOverlayNode = overlayNode
-        addChild(overlayNode)
-
-        overlayNode.run(SKAction.fadeIn(withDuration: 0.12))
-    }
-
-    // MARK: - Overlay Background
-
-    func makeGameOverDimLayer() -> SKNode {
-        let dimBackground = SKShapeNode(rectOf: configuration.referenceScreenSize)
-        dimBackground.name = "gameOverDimLayer"
-        dimBackground.fillColor = gameOverOverlayBrown.withAlphaComponent(0.70)
-        dimBackground.strokeColor = .clear
-        dimBackground.zPosition = 0
-        return dimBackground
-    }
-
-    // MARK: - Overlay Title
-
-    func makeGameOverTitle() -> SKLabelNode {
-        // The title uses the darker reference orange and stays in the upper
-        // result area like the right-side comparison screen.
-        let titleLabel = makeLabel(
-            text: "GAME OVER",
-            fontName: configuration.primaryFontName,
-            fontSize: 58,
-            color: gameOverTitleColor
-        )
-        titleLabel.name = "gameOverTitle"
-        titleLabel.position = CGPoint(x: 0, y: 190)
-        return titleLabel
-    }
-
-    // MARK: - New Highscore Layout
-
-    func addNewHighScoreContent(to overlayNode: SKNode, scoreResult: ScoreResult) {
-        let crownNode = makeCrownNode()
-        crownNode.position = CGPoint(x: 0, y: 104)
-        overlayNode.addChild(crownNode)
-
-        let newHighScoreLabel = makeLabel(
-            text: "NEW HIGHSCORE",
-            fontName: configuration.secondaryFontName,
-            fontSize: 25,
-            color: gameOverSecondaryTextColor
-        )
-        newHighScoreLabel.name = "gameOverNewHighScoreLabel"
-        newHighScoreLabel.position = CGPoint(x: 0, y: 52)
-        overlayNode.addChild(newHighScoreLabel)
-
-        let scoreNode = makePrimaryScoreNode(scoreResult.distanceMeters)
-        scoreNode.position = CGPoint(x: 0, y: -30)
-        overlayNode.addChild(scoreNode)
-    }
-
-    // MARK: - Regular Highscore Layout
-
-    func addRegularHighScoreContent(to overlayNode: SKNode, scoreResult: ScoreResult) {
-        // The normal game-over score sits under the title with the large
-        // primary type treatment from the reference.
-        let scoreNode = makePrimaryScoreNode(scoreResult.distanceMeters)
-        scoreNode.position = CGPoint(x: 0, y: 70)
-        overlayNode.addChild(scoreNode)
-
-        // Normal highscore copy uses #E28B40 and sits between the large score
-        // and Try Again button so the result stack matches the reference.
-        let highScoreTitleLabel = makeLabel(
-            text: "YOUR HIGHSCORE",
-            fontName: configuration.secondaryFontName,
-            fontSize: 20,
-            color: gameOverHighScoreTextColor
-        )
-        highScoreTitleLabel.name = "gameOverHighScoreTitle"
-        highScoreTitleLabel.position = CGPoint(x: 0, y: -42)
-        overlayNode.addChild(highScoreTitleLabel)
-
-        // The saved highscore amount stays directly under the highscore label
-        // while remaining above the shared Try Again button.
-        let highScoreValueLabel = makeLabel(
-            text: "\(scoreResult.highScoreMeters)m",
-            fontName: configuration.secondaryFontName,
-            fontSize: 25,
-            color: gameOverHighScoreTextColor
-        )
-        highScoreValueLabel.name = "gameOverHighScoreValue"
-        highScoreValueLabel.position = CGPoint(x: 0, y: -74)
-        overlayNode.addChild(highScoreValueLabel)
-    }
-
-    // MARK: - Crown Symbol
-
-    func makeCrownNode() -> SKNode {
-        let crownTexture = makeTintedSymbolTexture(
-            systemName: "crown",
-            pointSize: 46,
-            color: gameOverSecondaryTextColor.uiColor
-        )
-        let crownNode = SKSpriteNode(texture: crownTexture)
-        crownNode.name = "gameOverCrown"
-        crownNode.size = CGSize(width: 52, height: 42)
-        return crownNode
-    }
-
-    func makeTintedSymbolTexture(
-        systemName: String,
-        pointSize: CGFloat,
-        color: UIColor
-    ) -> SKTexture? {
-        let symbolConfiguration = UIImage.SymbolConfiguration(pointSize: pointSize, weight: .regular)
-        guard let symbolImage = UIImage(
-            systemName: systemName,
-            withConfiguration: symbolConfiguration
-        )?.withRenderingMode(.alwaysTemplate) else {
-            return nil
-        }
-
-        let imageSize = CGSize(width: pointSize * 1.3, height: pointSize * 1.1)
-        let renderer = UIGraphicsImageRenderer(size: imageSize)
-        let renderedImage = renderer.image { _ in
-            color.set()
-
-            let drawRect = CGRect(
-                x: (imageSize.width - symbolImage.size.width) / 2,
-                y: (imageSize.height - symbolImage.size.height) / 2,
-                width: symbolImage.size.width,
-                height: symbolImage.size.height
-            )
-            symbolImage.draw(in: drawRect)
-        }
-
-        return SKTexture(image: renderedImage)
-    }
-
-    // MARK: - Score Typography
-
-    func makePrimaryScoreNode(_ meters: Int) -> SKNode {
-        let scoreNode = SKNode()
-        scoreNode.name = "gameOverScore"
-
-        let scoreLabel = makeLabel(
-            text: "\(meters)",
-            fontName: configuration.primaryFontName,
-            fontSize: 104,
-            color: gameOverScoreColor
-        )
-        scoreLabel.name = "gameOverScoreNumber"
-        scoreLabel.position = .zero
-        scoreNode.addChild(scoreLabel)
-
-        let metersLabel = makeLabel(
-            text: "m",
-            fontName: configuration.primaryFontName,
-            fontSize: 32,
-            color: gameOverScoreColor
-        )
-        metersLabel.name = "gameOverScoreMeters"
-        metersLabel.horizontalAlignmentMode = .left
-        metersLabel.position = CGPoint(x: scoreLabel.frame.maxX + 6, y: -28)
-        scoreNode.addChild(metersLabel)
-
-        return scoreNode
-    }
-
-    // MARK: - Try Again Button
-
-    func makeTryAgainButton() -> SKSpriteNode {
-        // The button uses the exact asset and the configured size so future art
-        // tuning can happen from `GameConfiguration` without touching this UI.
-        let buttonNode = SKSpriteNode(imageNamed: NomadAsset.tryAgainButton.rawValue)
-        buttonNode.name = "gameOverRetryButton"
-        buttonNode.position = CGPoint(x: 0, y: -178)
-        buttonNode.size = configuration.gameOverTryAgainButtonSize
-        buttonNode.zPosition = 2
-        return buttonNode
-    }
-
-    // MARK: - Home Button
-
-    func makeHomeButton() -> SKNode {
-        let homeNode = SKNode()
-        homeNode.name = "gameOverHomeButton"
-        homeNode.position = CGPoint(x: 0, y: -252)
-        homeNode.zPosition = 3
-
-        let homeLabel = makeLabel(
-            text: "Home",
-            fontName: configuration.secondaryFontName,
-            fontSize: 20,
-            color: gameOverSecondaryTextColor
-        )
-        homeLabel.name = "gameOverHomeLabel"
-        homeNode.addChild(homeLabel)
-
-        let underlineY = homeLabel.frame.minY - 2
-        let underlinePath = CGMutablePath()
-        underlinePath.move(to: CGPoint(x: homeLabel.frame.minX, y: underlineY))
-        underlinePath.addLine(to: CGPoint(x: homeLabel.frame.maxX, y: underlineY))
-
-        let underlineNode = SKShapeNode(path: underlinePath)
-        underlineNode.name = "gameOverHomeUnderline"
-        underlineNode.strokeColor = gameOverSecondaryTextColor
-        underlineNode.lineWidth = 1
-        homeNode.addChild(underlineNode)
-
-        return homeNode
-    }
-
-    // MARK: - Label Factory
-
-    func makeLabel(
-        text: String,
-        fontName: String,
-        fontSize: CGFloat,
-        color: SKColor
-    ) -> SKLabelNode {
-        let label = SKLabelNode(fontNamed: fontName)
-        label.text = text
-        label.fontSize = fontSize
-        label.fontColor = color
-        label.horizontalAlignmentMode = .center
-        label.verticalAlignmentMode = .center
-        label.zPosition = 2
-        return label
-    }
-
-    // MARK: - Game Font Registration
-
-    /// Registers the shared game typography before any SpriteKit label asks for
-    /// the primary or secondary font by name.
-    func registerGameFontsIfNeeded() {
-        guard !Self.didRegisterGameFonts else { return }
-
-        // MARK: Game Font Registration
-        // Register the whole-game primary and secondary fonts before UI nodes
-        // try to create labels with these typefaces.
-        registerGameFontResource(named: configuration.primaryFontName, fileExtension: "ttf")
-        registerGameFontResource(named: configuration.secondaryFontName, fileExtension: "ttf")
-        Self.didRegisterGameFonts = true
-    }
-
-    /// Looks for a font either in the app bundle root or inside `Fonts/`, then
-    /// registers it for the current process as a defensive runtime fallback.
-    func registerGameFontResource(named name: String, fileExtension: String) {
-        let directURL = Bundle.main.url(forResource: name, withExtension: fileExtension)
-        let fontsFolderURL = Bundle.main.url(
-            forResource: name,
-            withExtension: fileExtension,
-            subdirectory: "Fonts"
-        )
-
-        guard let fontURL = directURL ?? fontsFolderURL else { return }
-
-        // UIAppFonts handles the normal app launch path. This registration is a
-        // defensive fallback for the file-synced project folder layout.
-        CTFontManagerRegisterFontsForURL(fontURL as CFURL, .process, nil)
-    }
-
-    // MARK: - Game Over Touch Handling
-
-    func handleGameOverTouch(at location: CGPoint) {
-        if isTouch(location, inside: gameOverRetryButtonNode, xInset: -18, yInset: -10) {
-            setUpScene()
-            return
-        }
-
-        if isTouch(location, inside: gameOverHomeButtonNode, xInset: -16, yInset: -10) {
-            // FIXME: Navigate to the Home Menu once the Home Menu screen exists.
-            return
-        }
-    }
-
-    func isTouch(
-        _ location: CGPoint,
-        inside node: SKNode?,
-        xInset: CGFloat,
-        yInset: CGFloat
-    ) -> Bool {
-        guard let node else { return false }
-
-        return node.calculateAccumulatedFrame()
-            .insetBy(dx: xInset, dy: yInset)
-            .contains(location)
-    }
-
-    // MARK: - Game Over Colors
-
-    var gameOverTitleColor: SKColor {
-        // Title color from the user's latest comparison palette.
-        SKColor(hex: 0xE28B40)
-    }
-
-    var gameOverScoreColor: SKColor {
-        // Score keeps the brighter orange so the distance remains the focal point.
-        SKColor(hex: 0xF6A74C)
-    }
-
-    var gameOverSecondaryTextColor: SKColor {
-        // Secondary accent is used for new-highscore and Home text.
-        SKColor(hex: 0xF6A74C)
-    }
-
-    var gameOverHighScoreTextColor: SKColor {
-        // Normal highscore label and value use the requested #E28B40 color.
-        SKColor(hex: 0xE28B40)
-    }
-
-    var gameOverOverlayBrown: SKColor {
-        // Overlay wash is the requested dark brown at 70% alpha in the dim node.
-        SKColor(hex: 0x49270E)
-    }
-}
-
 // MARK: - Score Result
 
-private struct ScoreResult {
+/// Finished-run score data shown by the Game Over overlay.
+struct ScoreResult {
     // MARK: - Score Values
 
     let distanceMeters: Int
@@ -925,7 +532,7 @@ private struct ScoreResult {
 
 /// Stores score and highscore separately from the temporary preview updater.
 /// The real distance counter can set meters directly without changing overlay UI.
-private final class DistanceScoreSystem {
+final class DistanceScoreSystem {
 
     // MARK: - Storage Keys
 
@@ -987,27 +594,5 @@ private final class DistanceScoreSystem {
             highScoreMeters: finalHighScore,
             isNewHighScore: isNewHighScore
         )
-    }
-}
-
-// MARK: - SpriteKit Color Bridge
-
-private extension SKColor {
-
-    // MARK: - Hex Initialization
-
-    convenience init(hex: Int, alpha: CGFloat = 1) {
-        self.init(
-            red: CGFloat((hex >> 16) & 0xFF) / 255,
-            green: CGFloat((hex >> 8) & 0xFF) / 255,
-            blue: CGFloat(hex & 0xFF) / 255,
-            alpha: alpha
-        )
-    }
-
-    // MARK: - UIKit Conversion
-
-    var uiColor: UIColor {
-        self
     }
 }

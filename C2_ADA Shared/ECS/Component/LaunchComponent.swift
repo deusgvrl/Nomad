@@ -21,29 +21,22 @@ final class LaunchComponent: GKComponent {
     // MARK: - Airborne State
 
     private(set) var isAirborne = false
-    private(set) var isDescending = false
     private(set) var currentPosition: CGPoint = .zero
-    private(set) var landingTargetPosition: CGPoint?
     private var horizontalVelocity: CGFloat = 0
     private var verticalVelocity: CGFloat = 0
     private var forwardYVelocity: CGFloat = 0
 
     // MARK: - Launch Lifecycle
 
-    func launch(
-        from position: CGPoint,
-        horizontalVelocity: CGFloat,
-        verticalVelocity: CGFloat,
-        forwardYVelocity: CGFloat,
-        landingTargetPosition: CGPoint? = nil
-    ) {
+    func launch(from position: CGPoint, horizontalVelocity: CGFloat, verticalVelocity: CGFloat, forwardYVelocity: CGFloat) {
+        // MARK: Dev Jump State
+        // Store the same simple velocity state used on `dev` so release starts
+        // a normal jump arc instead of steering toward a preselected fall spot.
         isAirborne = true
-        isDescending = false
         currentPosition = position
         self.horizontalVelocity = horizontalVelocity
         self.verticalVelocity = verticalVelocity
         self.forwardYVelocity = forwardYVelocity
-        self.landingTargetPosition = landingTargetPosition
     }
 
     // MARK: - Physics Update
@@ -54,7 +47,6 @@ final class LaunchComponent: GKComponent {
         let elapsedTime = CGFloat(deltaTime)
         
         verticalVelocity -= gravity * elapsedTime
-        isDescending = (verticalVelocity + forwardYVelocity) <= 0
         
         currentPosition = CGPoint(
             x: currentPosition.x + horizontalVelocity * elapsedTime,
@@ -66,9 +58,10 @@ final class LaunchComponent: GKComponent {
     // MARK: - Reset
 
     func reset() {
+        // MARK: Dev Jump Reset
+        // Clear only the active jump velocities; the next release will recreate
+        // the same dev jump arc from the player's current position.
         isAirborne = false
-        isDescending = false
-        landingTargetPosition = nil
         horizontalVelocity = 0
         verticalVelocity = 0
         forwardYVelocity = 0

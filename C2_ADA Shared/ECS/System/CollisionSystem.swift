@@ -59,7 +59,7 @@ final class CollisionSystem {
                 guard other !== playerVehicle else { continue }
                 
                 guard let otherHitbox = other.component(ofType: HitboxComponent.self),
-                      let otherParent = other.node.parent else {
+                      other.node.parent != nil else {
                     continue
                 }
 

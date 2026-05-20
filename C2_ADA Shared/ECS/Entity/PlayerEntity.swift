@@ -31,7 +31,7 @@ final class PlayerEntity: GKEntity {
 
         let playerNode = Self.makePlayerNode(configuration: configuration)
         playerNode.name = "player"
-        playerNode.zPosition = ZPosition.player
+        playerNode.zPosition = RenderLayer.player
         self.node = playerNode
 
         super.init()

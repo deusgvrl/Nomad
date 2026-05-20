@@ -173,7 +173,7 @@ extension SpawnSystem {
             let leftBaseY: CGFloat = 780
             
             // zPosition dinamis: Menggunakan leftWall (background)
-            leftNode.zPosition = ZPosition.leftWall + CGFloat(totalWallChunks - index)
+            leftNode.zPosition = RenderLayer.leftWall + CGFloat(totalWallChunks - index)
             
             leftNode.position = CGPoint(
                 x: leftBaseX + (CGFloat(index) * chunkOffsetX),
@@ -193,7 +193,7 @@ extension SpawnSystem {
             let rightBaseY: CGFloat = -50
             
             // zPosition dinamis: Menggunakan rightWall (foreground)
-            rightNode.zPosition = ZPosition.rightWall + CGFloat(totalWallChunks - index)
+            rightNode.zPosition = RenderLayer.rightWall + CGFloat(totalWallChunks - index)
             
             rightNode.position = CGPoint(
                 x: rightBaseX + (CGFloat(index) * chunkOffsetX),
@@ -469,7 +469,7 @@ extension SpawnSystem {
         
         // Konversi ke worldNode agar tidak ikut terhapus saat row recycle
         vehicle.position = worldNode.convert(relativePos, from: rowNode)
-        vehicle.zPosition = ZPosition.vehicle
+        vehicle.zPosition = RenderLayer.vehicle
         
         // Kecepatan acak untuk kendaraan yang spawn (maju pelan)
         let randomSpeed = CGFloat.random(in: 15...35)
@@ -533,7 +533,7 @@ extension SpawnSystem {
                 col: randomCol
             )
             
-            obstacle.zPosition = ZPosition.obstacle
+            obstacle.zPosition = RenderLayer.obstacle
             
             let obstacleEntity = ObstacleEntity(type: randomType, node: obstacle)
             obstacleEntities.append(obstacleEntity)
@@ -592,7 +592,7 @@ extension SpawnSystem{
                 
                 // RESET SEMUA Z-POSITION (Solusi agar tidak hilang tenggelam)
                 for (index, node) in leftWallNodes.enumerated() {
-                    node.zPosition = ZPosition.leftWall + CGFloat(totalWallChunks - index)
+                    node.zPosition = RenderLayer.leftWall + CGFloat(totalWallChunks - index)
                 }
             }
         }
@@ -615,7 +615,7 @@ extension SpawnSystem{
                 
                 // RESET SEMUA Z-POSITION (Solusi agar tidak hilang tenggelam)
                 for (index, node) in rightWallNodes.enumerated() {
-                    node.zPosition = ZPosition.rightWall + CGFloat(totalWallChunks - index)
+                    node.zPosition = RenderLayer.rightWall + CGFloat(totalWallChunks - index)
                 }
             }
         }
@@ -638,7 +638,7 @@ extension SpawnSystem{
             vehicleEntities.append(oldVehicle)
         }
         
-        oldVehicle.node.zPosition = ZPosition.vehicle
+        oldVehicle.node.zPosition = RenderLayer.vehicle
     }
     
     func removeVehicle(entity: VehicleEntity) {

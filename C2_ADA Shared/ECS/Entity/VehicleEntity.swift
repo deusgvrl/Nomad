@@ -51,7 +51,7 @@ final class VehicleEntity: GKEntity {
         
         let vehicleNode = Self.makeVehicleNode(configuration: configuration)
         vehicleNode.name = "vehicle"
-        vehicleNode.zPosition = ZPosition.vehicle
+        vehicleNode.zPosition = RenderLayer.vehicle
         vehicleNode.position = configuration.currentVehiclePosition
         
         let steering = MovementComponent(
@@ -69,7 +69,7 @@ final class VehicleEntity: GKEntity {
 //    init(configuration: GameConfiguration) {
 //        let vehicleNode = Self.makeVehicleNode(configuration: configuration)
 //        vehicleNode.name = "vehicle"
-//        vehicleNode.zPosition = ZPosition.vehicle
+//        vehicleNode.zPosition = RenderLayer.vehicle
 //        vehicleNode.position = configuration.currentVehiclePosition
 //        self.node = vehicleNode
 //
