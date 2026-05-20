@@ -22,17 +22,19 @@ import GameplayKit
 /// This matches the current control direction: the player steers left/right on
 /// the phone screen, while the world art can still stay isometric.
 final class MovementComponent: GKComponent {
+    
+    private var targetOriginPosition: CGPoint?
 
     // MARK: - Shared Movement Data
 
     private(set) var speed: CGFloat
 
     // MARK: - Screen Movement Data
-
+    private let baseAnchorPosition: CGPoint
     private let dragSensitivity: CGFloat
     private let screenXBounds: ClosedRange<CGFloat>
     private let screenYBounds: ClosedRange<CGFloat>
-    private let movementOriginPosition: CGPoint
+    private var movementOriginPosition: CGPoint
     private let movementAxisXOffsetBounds: ClosedRange<CGFloat>
     private let movementAxisSlope: CGFloat
     private var dragStartLocation: CGPoint?
@@ -50,7 +52,8 @@ final class MovementComponent: GKComponent {
     // MARK: - Initialization
 
     init(
-        position: CGPoint,
+        anchorPosition: CGPoint,
+        currentPosition: CGPoint,
         screenSize: CGSize,
         vehicleSize: CGSize,
         movementAxisAngleInDegrees: CGFloat,
@@ -70,8 +73,8 @@ final class MovementComponent: GKComponent {
         let screenHalfHeight = screenSize.height / 2
         let screenXBounds = (-screenHalfWidth + vehicleHalfWidth)...(screenHalfWidth - vehicleHalfWidth)
         let screenYBounds = (-screenHalfHeight + vehicleHalfHeight)...(screenHalfHeight - vehicleHalfHeight)
-        let clampedX = min(max(position.x, screenXBounds.lowerBound), screenXBounds.upperBound)
-        let clampedY = min(max(position.y, screenYBounds.lowerBound), screenYBounds.upperBound)
+        let clampedX = min(max(currentPosition.x, screenXBounds.lowerBound), screenXBounds.upperBound)
+        let clampedY = min(max(currentPosition.y, screenYBounds.lowerBound), screenYBounds.upperBound)
         let clampedPosition = CGPoint(x: clampedX, y: clampedY)
         let movementAxisRadians = Double(movementAxisAngleInDegrees) * Double.pi / 180
 
@@ -79,16 +82,21 @@ final class MovementComponent: GKComponent {
         // read as a phone-screen angle, so positive degrees tilt down to the
         // right visually by using a negative SpriteKit slope.
         let movementAxisSlope = -CGFloat(tan(movementAxisRadians))
+        let initialOffset = clampedX - anchorPosition.x
+        
+        let originX = anchorPosition.x
+        let originY = clampedY - (movementAxisSlope * initialOffset)
 
         self.speed = 0
         self.dragSensitivity = dragSensitivity
         self.screenXBounds = screenXBounds
         self.screenYBounds = screenYBounds
-        self.movementOriginPosition = clampedPosition
+        self.baseAnchorPosition = anchorPosition
+        self.movementOriginPosition = CGPoint(x: originX, y: originY)
         self.movementAxisXOffsetBounds = movementAxisXOffsetBounds
         self.movementAxisSlope = movementAxisSlope
         self.position = clampedPosition
-        self.roadWidthOffset = 0
+        self.roadWidthOffset = initialOffset
         super.init()
     }
 
@@ -106,6 +114,7 @@ final class MovementComponent: GKComponent {
         self.movementOriginPosition = .zero
         self.movementAxisXOffsetBounds = -CGFloat.greatestFiniteMagnitude...CGFloat.greatestFiniteMagnitude
         self.movementAxisSlope = 0
+        self.baseAnchorPosition = .zero
         self.position = .zero
         self.roadWidthOffset = 0
         super.init()
@@ -159,16 +168,16 @@ final class MovementComponent: GKComponent {
     private func clampedAxisOffset(_ proposedAxisOffset: CGFloat) -> CGFloat {
         var lowerOffset = max(
             movementAxisXOffsetBounds.lowerBound,
-            screenXBounds.lowerBound - movementOriginPosition.x
+            screenXBounds.lowerBound - baseAnchorPosition.x
         )
         var upperOffset = min(
             movementAxisXOffsetBounds.upperBound,
-            screenXBounds.upperBound - movementOriginPosition.x
+            screenXBounds.upperBound - baseAnchorPosition.x
         )
 
         if movementAxisSlope != 0 {
-            let yLowerOffset = (screenYBounds.lowerBound - movementOriginPosition.y) / movementAxisSlope
-            let yUpperOffset = (screenYBounds.upperBound - movementOriginPosition.y) / movementAxisSlope
+            let yLowerOffset = (screenYBounds.lowerBound - baseAnchorPosition.y) / movementAxisSlope
+            let yUpperOffset = (screenYBounds.upperBound - baseAnchorPosition.y) / movementAxisSlope
             lowerOffset = max(lowerOffset, min(yLowerOffset, yUpperOffset))
             upperOffset = min(upperOffset, max(yLowerOffset, yUpperOffset))
         }
@@ -182,4 +191,40 @@ final class MovementComponent: GKComponent {
         dragStartLocation = nil
         dragStartPosition = nil
     }
+    
+    // MARK: - Linear Interpolation Logic
+    func startLerping(to target: CGPoint) {
+        targetOriginPosition = target
+        
+        if isDragging {
+            dragStartPosition = movementOriginPosition
+        }
+    }
+    
+    func updateLerp(deltaTime: TimeInterval) {
+        guard let target = targetOriginPosition else { return }
+        
+//        let dx = target.x - movementOriginPosition.x
+        let dy = target.y - movementOriginPosition.y
+//        let distance = hypot(dx, dy)
+        
+        if abs(dy) < 1.0 {
+            movementOriginPosition.y = target.y
+            targetOriginPosition = nil
+        } else {
+            let lerpFactor = CGFloat(deltaTime * 2.0)
+//            let moveX = dx * lerpFactor
+            let moveY = dy * lerpFactor
+//            movementOriginPosition.x += moveX
+            movementOriginPosition.y += moveY
+            if var startPos = dragStartPosition {
+//                startPos.x += moveX
+                startPos.y += moveY
+                dragStartPosition = startPos
+            }
+//            roadWidthOffset -= moveX
+            _ = setAxisOffset(roadWidthOffset)
+        }
+    }
 }
+

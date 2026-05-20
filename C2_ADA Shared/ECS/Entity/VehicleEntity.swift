@@ -55,7 +55,8 @@ final class VehicleEntity: GKEntity {
         vehicleNode.position = configuration.currentVehiclePosition
         
         let steering = MovementComponent(
-            position: configuration.currentVehiclePosition,
+            anchorPosition: configuration.currentVehiclePosition,
+            currentPosition: configuration.currentVehiclePosition,
             screenSize: configuration.referenceScreenSize,
             vehicleSize: configuration.vehicleSize,
             movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
