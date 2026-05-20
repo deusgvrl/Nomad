@@ -20,6 +20,7 @@ final class PlayerEntity: GKEntity {
 
     let node: SKNode
 
+
     // MARK: - Placement Tuning
 
     private let rideOffset: CGVector
@@ -35,6 +36,7 @@ final class PlayerEntity: GKEntity {
         self.node = playerNode
 
         super.init()
+    
 
         addComponent(NodeComponent(node: playerNode))
         addComponent(InputIntentComponent())
@@ -106,4 +108,15 @@ final class PlayerEntity: GKEntity {
         let sequence = SKAction.sequence([grow, shrink])
         node.run(sequence)
     }
+    
+    func cancelJumpVisual() {
+        node.removeAllActions()
+        
+        let resetScale = SKAction.scale(to: 1.0, duration: 0.15)
+        resetScale.timingMode = .easeOut
+        node.run(resetScale)
+    }
+    
+    
 }
+

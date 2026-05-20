@@ -71,3 +71,4 @@ final class LaunchSystem {
         return configuration.launchVelocity / CGFloat(tan(radians))
     }
 }
+

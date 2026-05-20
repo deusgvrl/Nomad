@@ -36,6 +36,7 @@ final class GameScene: SKScene {
     /// merge dev's treadmill setup without shifting the movement prototype's
     /// start position.
     private let worldNode = SKNode()
+    private let targetReticleNode = SKShapeNode()
     private let gameplayNode = SKNode()
     private var spawnSystem: SpawnSystem?
 
@@ -47,6 +48,8 @@ final class GameScene: SKScene {
     private var currentVehicleEntity: VehicleEntity? // This is already optional
     private var gameOverOverlayNode: SKNode?
     private var lastUpdateTime: TimeInterval = 0
+    private var currentTimeScale: CGFloat = 1.0
+    private var targetTimeScale: CGFloat = 1.0
 
     // MARK: - Scene Factory
 
@@ -90,6 +93,7 @@ final class GameScene: SKScene {
 
     override func update(_ currentTime: TimeInterval) {
         let deltaTime = makeDeltaTime(from: currentTime)
+
         spawnSystem?.update(currentTime)
         updateJumpingPlayer(currentTime)
         
@@ -173,6 +177,15 @@ private extension GameScene {
         gameplayNode.position = .zero
         gameplayNode.zPosition = ZPosition.vehicle
         addChild(gameplayNode)
+        
+        let ringDiameter = configuration.latchDistance * 2
+        let path = CGPath(ellipseIn: CGRect(x: -ringDiameter/2, y: -ringDiameter/2, width: ringDiameter, height: ringDiameter), transform: nil)
+        targetReticleNode.path = path
+        targetReticleNode.strokeColor = SKColor(red: 1.00, green: 0.86, blue: 0.24, alpha: 1.0)
+        targetReticleNode.lineWidth = 4
+        targetReticleNode.alpha = 0
+        targetReticleNode.zPosition = ZPosition.overlay
+        worldNode.addChild(targetReticleNode)
     }
 
     func setUpSpawnSystem() {
@@ -235,7 +248,7 @@ private extension GameScene {
     }
 }
 
-// MARK: - Frame Update
+// MARK: - Frame Updatex
 
 private extension GameScene {
 
@@ -247,6 +260,26 @@ private extension GameScene {
         // Drag input is ignored until the player latches again.
         if playerState == .jumping {
             let launchResult = launchSystem?.update(player: playerEntity, deltaTime: deltaTime)
+            
+            let allVehicles = spawnSystem?.vehicleEntities ?? []
+            let activeVehicles = allVehicles.filter { $0 !== currentVehicleEntity }
+            
+            let bestTarget = latchSystem?.getBestTarget(player: playerEntity, vehicles: activeVehicles)
+            
+            if let target = bestTarget {
+                targetTimeScale = 0.6
+                targetReticleNode.position = target.node.position
+                
+                if targetReticleNode.alpha == 0 {
+                    targetReticleNode.run(SKAction.fadeAlpha(to: 1.0, duration: 0.15))
+                }
+            } else {
+                targetTimeScale = 1.0
+                if targetReticleNode.alpha > 0 {
+                    targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.15))
+                }
+            }
+            
             if launchResult == .fell {
                 pausePlayerAfterFall()
             }
@@ -258,7 +291,18 @@ private extension GameScene {
         defer { lastUpdateTime = currentTime }
 
         guard lastUpdateTime > 0 else { return 0 }
-        return min(currentTime - lastUpdateTime, configuration.maximumDeltaTime)
+        let rawDelta = min(currentTime - lastUpdateTime, configuration.maximumDeltaTime)
+        
+        let scaleDiff = targetTimeScale - currentTimeScale
+        if abs(scaleDiff) < 0.01 {
+            currentTimeScale = targetTimeScale
+        } else {
+            currentTimeScale += scaleDiff * CGFloat(rawDelta * 4.0)
+        }
+        
+        let dilatedDelta = rawDelta * TimeInterval(currentTimeScale)
+        self.speed = currentTimeScale
+        return dilatedDelta
     }
 }
 
@@ -348,6 +392,9 @@ private extension GameScene {
     /// longer triggers the game-over overlay. The old game-over functions are
     /// kept below, disconnected, for the later game-over branch.
     func pausePlayerAfterFall() {
+        targetTimeScale = 1.0
+        playerEntity?.cancelJumpVisual()
+        targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.1))
         playerState = .falling
         if let currentVehicleEntity {
             movementSystem.endSteering(vehicle: currentVehicleEntity)
@@ -356,7 +403,9 @@ private extension GameScene {
     
     func completeLatch(on vehicle: VehicleEntity, startLocation: CGPoint? = nil) {
         guard let playerEntity else { return }
-        
+        playerEntity.cancelJumpVisual()
+        targetTimeScale = 1.0
+        targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.1))
         // 1. Remove the old vehicle from the scene
 //        if let oldVehicle = currentVehicleEntity {
 //            oldVehicle.node.removeFromParent()
