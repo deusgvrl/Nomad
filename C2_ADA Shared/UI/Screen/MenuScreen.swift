@@ -31,7 +31,6 @@ final class MenuScreen: SKNode {
     // MARK: - Initialization
 
     init(sceneSize: CGSize) {
-
         super.init()
 
         name = "menuScreen"
@@ -52,7 +51,6 @@ final class MenuScreen: SKNode {
 private extension MenuScreen {
 
     func setupBackground(sceneSize: CGSize) {
-
         backgroundNode.size = sceneSize
         backgroundNode.position = .zero
         backgroundNode.zPosition = -2
@@ -71,7 +69,6 @@ private extension MenuScreen {
     }
 
     func setupLogo(sceneSize: CGSize) {
-
         SpriteNodeHelper.resize(
             node: logoNode,
             width: sceneSize.width * 0.90
@@ -86,13 +83,11 @@ private extension MenuScreen {
     }
 
     func setupButtons(sceneSize: CGSize) {
-
         setupStartButton(sceneSize: sceneSize)
         setupSettingsButton(sceneSize: sceneSize)
     }
 
     func setupStartButton(sceneSize: CGSize) {
-
         startButton.name = "startButton"
 
         SpriteNodeHelper.resize(
@@ -109,9 +104,8 @@ private extension MenuScreen {
     }
 
     func setupSettingsButton(sceneSize: CGSize) {
-
         settingsButton.name = "settingsButton"
-
+        
         SpriteNodeHelper.resize(
             node: settingsButton,
             width: sceneSize.width * 0.45
@@ -129,32 +123,23 @@ private extension MenuScreen {
 // MARK: - Public Interaction
 
 extension MenuScreen {
-
     func handleTouch(at location: CGPoint) {
-
         guard let tappedNode =
                 atPoint(location) as? SKSpriteNode else {
             return
         }
 
         switch tappedNode.name {
-
         case "startButton":
-
             animateButton(startButton)
-
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-
                 self.hide()
                 self.onStartTapped?()
             }
 
         case "settingsButton":
-
             animateButton(settingsButton)
-
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-
                 self.onSettingsTapped?()
             }
 
@@ -164,18 +149,15 @@ extension MenuScreen {
     }
 
     func show(in scene: SKScene) {
-
         alpha = 0
-
         scene.addChild(self)
-
+        
         run(
             SKAction.fadeIn(withDuration: 0.25)
         )
     }
 
     func hide() {
-
         run(
             SKAction.sequence([
                 SKAction.fadeOut(withDuration: 0.25),
@@ -188,19 +170,17 @@ extension MenuScreen {
 // MARK: - Animation
 
 private extension MenuScreen {
-
     func animateButton(_ button: SKSpriteNode) {
-
         let press = SKAction.scale(
             to: 0.92,
             duration: 0.05
         )
-
+        
         let release = SKAction.scale(
             to: 1.0,
             duration: 0.05
         )
-
+        
         button.run(
             SKAction.sequence([press, release])
         )

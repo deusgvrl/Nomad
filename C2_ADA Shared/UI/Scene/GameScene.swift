@@ -48,9 +48,8 @@ final class GameScene: SKScene {
     private var currentVehicleEntity: VehicleEntity?
     private var gameOverOverlayNode: SKNode?
     private var lastUpdateTime: TimeInterval = 0
-    
-    // Properti untuk menyimpan instance menu utama
     private var menuScreen: MenuScreen?
+    private var dimmedStartScreen: DimmedStartScreen?
 
     // MARK: - Scene Factory
 
@@ -151,19 +150,25 @@ final class GameScene: SKScene {
     // MARK: - Touch Input
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-
         guard let touch = touches.first else { return }
-
         let locationInScene = touch.location(in: self)
 
         // MENU SCREEN INPUT
         if let menuScreen {
-
             menuScreen.handleTouch(at: locationInScene)
-
             return
         }
-
+        
+        // DIMMED SCREEN INPUT
+        if let dimmedStartScreen {
+            dimmedStartScreen.beginHold()
+            handle(
+                inputSystem.begin(
+                    at: touch.location(in: gameplayNode)
+                )
+            )
+            return
+        }
         handle(inputSystem.begin(at: touch.location(in: gameplayNode)))
     }
 
@@ -536,15 +541,11 @@ private extension GameScene {
 
     // Menampilkan layar menu utama saat game dimulai
     func showMenuScreen() {
-
         let menu = MenuScreen(sceneSize: size)
-
         menu.onStartTapped = { [weak self] in
-
             guard let self else { return }
-
-            self.gameState = .waitingToStart
             self.menuScreen = nil
+            self.showDimmedStartScreen()
         }
 
         menu.onSettingsTapped = {
@@ -553,7 +554,24 @@ private extension GameScene {
         }
 
         menu.show(in: self)
-
         self.menuScreen = menu
+    }
+}
+
+// MARK: - Dimmed Screen
+private extension GameScene {
+    func showDimmedStartScreen() {
+        let screen = DimmedStartScreen(
+            sceneSize: size
+        )
+
+        screen.onHoldStarted = { [weak self] in
+            guard let self else { return }
+            self.dimmedStartScreen = nil
+            self.gameState = .waitingToStart
+        }
+
+        screen.show(in: self)
+        self.dimmedStartScreen = screen
     }
 }
