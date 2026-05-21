@@ -38,8 +38,7 @@ struct GameConfiguration {
         roadWidth: 380,
         // Bottom-center x location of the road before projecting forward.
         roadBottomCenterXPosition: -212,
-        // First playable vehicle slot from the hi-fi reference.
-        // Raising this Y value moves the whole 16-degree steering lane upward.
+        // First playable vehicle slot from the lo-fi reference.
         currentVehiclePosition: CGPoint(x: -115, y: -70),
         obstaclePositions: [
             CGPoint(x: 45, y: 125),
@@ -57,21 +56,26 @@ struct GameConfiguration {
         primaryFontName: "GreatLakesNF",
         // Secondary typeface for supporting whole-game labels and buttons.
         secondaryFontName: "Estandar-Regular",
+        // MARK: Forward Jump
+        // The player jump position follows this road-forward lane angle as a
+        // straight line; the sprite animation supplies the jump-height illusion.
         launchForwardAngleInDegrees: 60,
-        launchVelocity: 360,
-        launchForwardThrust: 180,
-        launchGravity: 920,
+        launchVelocity: 320,
+        launchForwardThrust: 50,
+        launchGravity: 1100,
         latchDistance: 52,
-        groundYPosition: -345,
+        groundYPosition: -280,
         maximumDeltaTime: 1.0 / 30.0,
         // MARK: Game Over Prototype
         // Temporary score preview stays isolated here so the real distance
         // counter can replace it without touching the game-over screen.
         debugDistancePreviewEnabled: true,
         debugDistancePreviewMetersPerSecond: 125,
-        // Jump forward distance is projected through the 60-degree road angle,
-        // so failed jumps and latch checks share the same forward road line.
-        jumpForwardDistance: 150,
+        // Jump forward distance is projected through the 60-degree road angle.
+        // Keeping this compact stops missed jumps from gliding too far ahead.
+        jumpForwardDistance: 90,
+        // Slower lane travel gives the player more readable time to latch.
+        jumpForwardDuration: 0.85,
         playerFallSettleDuration: 0.18,
         // Try Again is scaled from the imported wooden-button asset while
         // preserving its wide aspect ratio from the design reference.
@@ -111,9 +115,13 @@ struct GameConfiguration {
 
     // MARK: - Launch And Latch
 
+    /// Road-forward direction used by linear player jumps and failed-latch falls.
     let launchForwardAngleInDegrees: CGFloat
+    /// Legacy prototype tuning kept for compatibility with older tuning passes.
     let launchVelocity: CGFloat
+    /// Legacy prototype thrust kept for compatibility with older tuning passes.
     let launchForwardThrust: CGFloat
+    /// Legacy prototype gravity kept for compatibility with older tuning passes.
     let launchGravity: CGFloat
     let latchDistance: CGFloat
     let groundYPosition: CGFloat
@@ -124,6 +132,7 @@ struct GameConfiguration {
     let debugDistancePreviewEnabled: Bool
     let debugDistancePreviewMetersPerSecond: CGFloat
     let jumpForwardDistance: CGFloat
+    let jumpForwardDuration: TimeInterval
     let playerFallSettleDuration: TimeInterval
     let gameOverTryAgainButtonSize: CGSize
 

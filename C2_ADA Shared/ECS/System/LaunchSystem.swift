@@ -12,11 +12,11 @@ import SpriteKit
 
 // MARK: - Launch System
 
-/// Handles the player's jump arc after release.
+/// Handles the player's jump path after release.
 ///
-/// The player detaches from the car, moves forward in the isometric direction,
-/// and falls under gravity. If the y position drops below the ground line, this
-/// system reports `.fell`; `GameScene` decides what to do with that result.
+/// The player detaches from the car and moves forward on the same car-facing
+/// lane. If the jump finishes without a latch, this system reports `.fell`;
+/// `GameScene` decides how to present the Game Over result.
 final class LaunchSystem {
 
     // MARK: - Update Result
@@ -37,15 +37,15 @@ final class LaunchSystem {
     // MARK: - Launch Start
 
     func launch(player: PlayerEntity) {
-        // MARK: Dev Jump Launch
-        // Match `dev`: release only detaches the rider and applies the fixed
-        // launch velocities. It does not calculate a target landing position.
+        // MARK: Lane Jump Launch
+        // Release only detaches the rider and starts a straight lane jump. The
+        // visual scale animation supplies jump height without changing the path.
         player.detachFromVehicle()
         player.component(ofType: LaunchComponent.self)?.launch(
             from: player.node.position,
-            horizontalVelocity: launchForwardXVelocity,
-            verticalVelocity: configuration.launchVelocity,
-            forwardYVelocity: configuration.launchForwardThrust
+            direction: configuration.jumpForwardUnitVector,
+            distance: configuration.jumpForwardDistance,
+            duration: configuration.jumpForwardDuration
         )
     }
 
@@ -57,27 +57,17 @@ final class LaunchSystem {
             return .airborne
         }
 
-        let position = launchComponent.update(
-            deltaTime: deltaTime,
-            gravity: configuration.launchGravity
-        )
+        let position = launchComponent.updateLaunch(deltaTime: deltaTime)
         player.node.position = position
 
-        // MARK: Dev Fall Check
-        // Match `dev`: the launch remains airborne until the player crosses the
-        // prototype ground line, then GameScene decides the game-over response.
-        return position.y <= configuration.groundYPosition ? .fell : .airborne
+        // MARK: Lane End Check
+        // The component reports floor impact when the forward lane movement
+        // ends. This replaces the old gravity ground-line check so there is no
+        // curved fall after a missed latch.
+        return launchComponent.hasHitFloor ? .fell : .airborne
     }
 
-    // MARK: - Isometric Forward Motion
-
-    private var launchForwardXVelocity: CGFloat {
-        // MARK: Dev Forward Velocity
-        // Use the same fixed X velocity as `dev`, derived from the 60-degree
-        // launch angle, so jumps behave consistently before latching.
-        let radians = Double(configuration.launchForwardAngleInDegrees) * Double.pi / 180
-        
-        return configuration.launchVelocity / CGFloat(tan(radians))
-    }
+    // MARK: - Jump Timing
+    // Jump duration now lives in `GameConfiguration` so latch speed can be tuned
+    // directly without touching the lane-linear movement code.
 }
-

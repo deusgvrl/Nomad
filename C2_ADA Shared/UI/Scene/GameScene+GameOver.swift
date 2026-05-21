@@ -22,8 +22,10 @@ extension GameScene {
 
     // MARK: - Game Over Entry
 
-    /// Ends the run, stops movement, finishes score, settles the player, and
-    /// presents the Game Over overlay.
+    /// Ends the run, stops movement, finishes score, and presents the Game Over overlay.
+    ///
+    /// Falling keeps the final physics impact position. Crashes can still run a
+    /// short readability settle before the overlay appears.
     func enterGameOver(playerEndState: PlayerState = .crashed) {
         guard gameState != .gameOver else { return }
 
@@ -37,7 +39,12 @@ extension GameScene {
         playerEntity?.component(ofType: LaunchComponent.self)?.reset()
 
         let scoreResult = distanceScoreSystem.finishRun()
-        settlePlayerInFrontOfVehicle { [weak self] in
+        guard playerEndState != .falling else {
+            showGameOverScreen(scoreResult: scoreResult)
+            return
+        }
+
+        settlePlayerForCrash { [weak self] in
             self?.showGameOverScreen(scoreResult: scoreResult)
         }
     }
@@ -48,21 +55,34 @@ extension GameScene {
     func handleGameOverTouch(at location: CGPoint) {
         _ = gameOverScreen?.handleTouch(at: location)
     }
+
+    // MARK: - Fall Game Over Entry
+
+    /// Handles missed-jump lane impact before showing Game Over.
+    ///
+    /// The live jump path comes from `LaunchSystem`; this helper only cleans up
+    /// the final impact frame so the player does not receive another settle
+    /// movement when the overlay appears.
+    func enterFallGameOver() {
+        resetGameOverTiming()
+        cleanUpFallImpactPresentation()
+        enterGameOver(playerEndState: .falling)
+    }
 }
 
-// MARK: - Fall Landing
+// MARK: - Crash Settling
 
 private extension GameScene {
 
-    /// Moves a failed jump into a readable on-screen spot before the overlay
-    /// fades in, avoiding the old off-screen drift.
-    func settlePlayerInFrontOfVehicle(completion: @escaping () -> Void) {
+    /// Moves crash endings into a readable on-screen spot before the overlay
+    /// fades in, while fall endings keep their floor-impact position.
+    func settlePlayerForCrash(completion: @escaping () -> Void) {
         guard let playerEntity, let currentVehicleEntity else {
             completion()
             return
         }
 
-        let landingPosition = fallLandingPosition(
+        let landingPosition = crashLandingPosition(
             for: playerEntity,
             vehicle: currentVehicleEntity
         )
@@ -78,9 +98,9 @@ private extension GameScene {
         playerEntity.node.run(settleAction, completion: completion)
     }
 
-    /// Projects the failed jump from the player's current position along the
+    /// Projects crash presentation from the player's current position along the
     /// configured 60-degree road-forward direction.
-    func fallLandingPosition(for player: PlayerEntity, vehicle _: VehicleEntity) -> CGPoint {
+    func crashLandingPosition(for player: PlayerEntity, vehicle _: VehicleEntity) -> CGPoint {
         let playerPosition = player.node.position
         let proposedPosition = configuration.jumpForwardLandingPosition(from: playerPosition)
 

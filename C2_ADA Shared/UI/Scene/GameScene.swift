@@ -102,7 +102,7 @@ final class GameScene: SKScene {
         guard gameState == .playing else { return }
 
         spawnSystem?.update(currentTime)
-        updateJumpingPlayer(currentTime)
+        updateJumpingPlayer(deltaTime)
         
         if let vehicle = currentVehicleEntity, let player = playerEntity {
             if playerState == .riding {
@@ -218,7 +218,7 @@ private extension GameScene {
         targetReticleNode.strokeColor = SKColor(red: 1.00, green: 0.86, blue: 0.24, alpha: 1.0)
         targetReticleNode.lineWidth = 4
         targetReticleNode.alpha = 0
-        targetReticleNode.zPosition = ZPosition.overlay
+        targetReticleNode.zPosition = RenderLayer.overlay
         worldNode.addChild(targetReticleNode)
     }
 
@@ -357,7 +357,7 @@ private extension GameScene {
     func updateJumpingPlayer(_ deltaTime: TimeInterval) {
         guard let playerEntity else { return }
 
-        // While jumping, SpriteKit's frame loop updates the player's arc.
+        // While jumping, SpriteKit's frame loop updates the player's lane path.
         // Drag input is ignored until the player latches again.
         if playerState == .jumping {
             let launchResult = launchSystem?.update(player: playerEntity, deltaTime: deltaTime)
@@ -382,7 +382,7 @@ private extension GameScene {
             }
             
             if launchResult == .fell {
-                enterGameOver(playerEndState: .falling)
+                enterFallGameOver()
             }
         }
     }
@@ -406,6 +406,36 @@ private extension GameScene {
         let dilatedDelta = rawDelta * TimeInterval(currentTimeScale)
         self.speed = currentTimeScale
         return dilatedDelta
+    }
+
+}
+
+// MARK: - Game Over Presentation Support
+
+extension GameScene {
+
+    /// Restores normal scene timing before the Game Over overlay is presented.
+    func resetGameOverTiming() {
+        targetTimeScale = 1.0
+        currentTimeScale = 1.0
+        speed = 1.0
+    }
+
+    /// Clears jump-only visuals while preserving the exact lane-linear fall endpoint.
+    func cleanUpFallImpactPresentation() {
+        // MARK: Fall Reticle Cleanup
+        // A missed latch should hide the target indicator before the overlay
+        // appears so the Game Over screen is not visually cluttered.
+        targetReticleNode.removeAllActions()
+        targetReticleNode.alpha = 0.0
+
+        // MARK: Fall Player Cleanup
+        // Keep the player exactly where `LaunchSystem` ended the lane movement;
+        // only reset visual scale/actions before showing Game Over.
+        if let playerEntity {
+            playerEntity.node.removeAllActions()
+            playerEntity.node.setScale(1.0)
+        }
     }
 }
 
@@ -442,7 +472,7 @@ private extension GameScene {
             )
 
         case .released where gameState == .playing && playerState == .riding:
-            // Releasing detaches the player and starts the forward jump arc.
+            // Releasing detaches the player and starts the straight forward jump.
             movementSystem.endSteering(vehicle: currentVehicleEntity)
         
     
@@ -458,12 +488,12 @@ private extension GameScene {
             
             launchSystem?.launch(player: playerEntity)
             
-            playerEntity.playJumpVisual()
+            playerEntity.playJumpVisual(duration: configuration.jumpForwardDuration)
             playerState = .jumping
 
         case .holding(let startLocation) where gameState == .playing && playerState == .jumping:
-            // Holding again while airborne attempts to latch. A miss leaves the
-            // player in the jump arc until the fall line triggers game over.
+            // Holding again while airborne attempts to latch. A miss switches
+            // into a short straight fall along the same car-facing lane.
             playerState = .latching
             let allVehicles = spawnSystem?.vehicleEntities ?? []
             let activeVehicles = allVehicles.filter { $0 !== currentVehicleEntity }
@@ -471,6 +501,13 @@ private extension GameScene {
             if let latchedVehicle = latchSystem?.attemptLatch(player: playerEntity, onto: activeVehicles) {
                 completeLatch(on: latchedVehicle, startLocation: startLocation)
             } else {
+                let failedLatchFallDistance = configuration.vehicleSize.height * 0.55
+                playerEntity.component(ofType: LaunchComponent.self)?.beginFailedLatchFall(
+                    from: playerEntity.node.position,
+                    direction: configuration.jumpForwardUnitVector,
+                    distance: failedLatchFallDistance,
+                    duration: configuration.playerFallSettleDuration
+                )
                 playerState = .jumping
             }
 
@@ -530,14 +567,14 @@ private extension GameScene {
             
         }
 
-        vehicle.node.zPosition = ZPosition.vehicle
+        vehicle.node.zPosition = RenderLayer.vehicle
         
         // 4. Initialize steering starting from the spawn position
         let steering = MovementComponent(
             anchorPosition: configuration.currentVehiclePosition,
             currentPosition: vehicle.node.position,
             screenSize: configuration.referenceScreenSize,
-            vehicleSize: configuration.vehicleMovementBoundsSize,
+            vehicleSize: configuration.vehicleSize,
             movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
             movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
             dragSensitivity: configuration.dragSensitivity
