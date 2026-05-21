@@ -38,6 +38,10 @@ final class VehicleEntity: GKEntity {
         if let vehicleNode = node as? VehicleNode {
             // MENGAMBIL: Array berisi banyak bentuk kotak tabrakan dari Enum VehicleType
             addComponent(HitboxComponent(shapes: vehicleNode.vehicleType.hitboxShapes))
+            
+            // MENAMBAHKAN: Komponen kemarahan (Rage) untuk mengelola status mobil
+            addComponent(VehicleRageComponent(node: vehicleNode))
+            
         } else {
             // Fallback for generic nodes (tetap menggunakan satu kotak default)
             let hitboxWidth = node.frame.width * 0.7

@@ -21,6 +21,7 @@
 				ECS/Component/NodeComponent.swift,
 				ECS/Component/PositionComponent.swift,
 				ECS/Component/RideAttachmentComponent.swift,
+				ECS/Component/VehicleRageComponent.swift,
 				ECS/Entity/ObstacleEntity.swift,
 				ECS/Entity/PlayerEntity.swift,
 				ECS/Entity/RowEntity.swift,
