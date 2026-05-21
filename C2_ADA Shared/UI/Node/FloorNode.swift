@@ -23,11 +23,10 @@ class FloorNode: SKSpriteNode {
         
         // Set Posisi Menggunakan IsometricHelper
         self.position = IsometricHelper.getScreenPosition(row: row, col: col)
-        self.zPosition = IsometricHelper.getZPosition(row: row, col: col)
+        self.zPosition = IsometricHelper.getTileRenderLayer(row: row, col: col)
     }
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 }
-

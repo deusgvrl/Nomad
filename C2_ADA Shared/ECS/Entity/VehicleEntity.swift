@@ -55,14 +55,14 @@ final class VehicleEntity: GKEntity {
         
         let vehicleNode = Self.makeVehicleNode(configuration: configuration)
         vehicleNode.name = "vehicle"
-        vehicleNode.zPosition = ZPosition.vehicle
+        vehicleNode.zPosition = RenderLayer.vehicle
         vehicleNode.position = configuration.currentVehiclePosition
         
         let steering = MovementComponent(
             anchorPosition: configuration.currentVehiclePosition,
             currentPosition: configuration.currentVehiclePosition,
             screenSize: configuration.referenceScreenSize,
-            vehicleSize: configuration.vehicleSize,
+            vehicleSize: configuration.vehicleMovementBoundsSize,
             movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
             movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
             dragSensitivity: configuration.dragSensitivity
@@ -74,7 +74,7 @@ final class VehicleEntity: GKEntity {
 //    init(configuration: GameConfiguration) {
 //        let vehicleNode = Self.makeVehicleNode(configuration: configuration)
 //        vehicleNode.name = "vehicle"
-//        vehicleNode.zPosition = ZPosition.vehicle
+//        vehicleNode.zPosition = RenderLayer.vehicle
 //        vehicleNode.position = configuration.currentVehiclePosition
 //        self.node = vehicleNode
 //

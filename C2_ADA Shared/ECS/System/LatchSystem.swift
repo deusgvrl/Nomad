@@ -104,6 +104,7 @@ final class LatchSystem {
                 validTargets.append((vehicle: vehicle, distance: evaluation.distance))
             }
         }
+
         
         validTargets.sort { $0.distance < $1.distance }
         

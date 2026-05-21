@@ -29,11 +29,13 @@
 				ECS/Entity/WallEntity.swift,
 				ECS/Helper/EntityKind.swift,
 				ECS/Helper/GameConfiguration.swift,
+				ECS/Helper/GameFontRegistry.swift,
 				ECS/Helper/GameplayRule.swift,
 				ECS/Helper/InputPhase.swift,
 				ECS/Helper/IsometricHelper.swift,
 				ECS/Helper/NomadAsset.swift,
 				ECS/Helper/ObstacleHelper.swift,
+				ECS/Helper/RenderLayer.swift,
 				ECS/Helper/WallHelper.swift,
 				ECS/System/CollisionSystem.swift,
 				ECS/System/InputSystem.swift,
@@ -49,14 +51,14 @@
 				State/StateMachine.swift,
 				State/VehicleRageState.swift,
 				State/VehicleState.swift,
-				Support/IsometricProjector.swift,
-				Support/ZPosition.swift,
 				UI/Node/FloorNode.swift,
 				UI/Node/ObstacleNode.swift,
 				UI/Node/RowNode.swift,
 				UI/Node/VehicleNode.swift,
 				UI/Node/WallNode.swift,
 				UI/Scene/GameScene.swift,
+				"UI/Scene/GameScene+GameOver.swift",
+				UI/Screen/GameOverScreen.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
 		};
@@ -195,7 +197,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = AGBD4P9452;
+				DEVELOPMENT_TEAM = M7YC437JCH;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -229,7 +231,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = AGBD4P9452;
+				DEVELOPMENT_TEAM = M7YC437JCH;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

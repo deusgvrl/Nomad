@@ -32,7 +32,7 @@ final class PlayerEntity: GKEntity {
 
         let playerNode = Self.makePlayerNode(configuration: configuration)
         playerNode.name = "player"
-        playerNode.zPosition = ZPosition.player
+        playerNode.zPosition = RenderLayer.player
         self.node = playerNode
 
         super.init()
@@ -98,11 +98,16 @@ final class PlayerEntity: GKEntity {
     }
     
     // MARK: - Visual Animation
-    func playJumpVisual() {
-        let grow = SKAction.scale(to: 1.5, duration: 0.25)
+    func playJumpVisual(duration: TimeInterval) {
+        // MARK: Jump Visual Timing
+        // Match the visual airborne timing to the lane movement duration so the
+        // player does not return to normal size and appear to glide on the floor.
+        let halfDuration = max(duration / 2, 0.05)
+
+        let grow = SKAction.scale(to: 1.5, duration: halfDuration)
         grow.timingMode = .easeOut
         
-        let shrink = SKAction.scale(to: 1.0, duration: 0.25)
+        let shrink = SKAction.scale(to: 1.0, duration: halfDuration)
         shrink.timingMode = .easeIn
         
         let sequence = SKAction.sequence([grow, shrink])
@@ -119,4 +124,3 @@ final class PlayerEntity: GKEntity {
     
     
 }
-
