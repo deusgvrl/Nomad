@@ -101,16 +101,35 @@ final class GameScene: SKScene {
         let deltaTime = makeDeltaTime(from: currentTime)
         guard gameState == .playing else { return }
 
-        spawnSystem?.update(currentTime)
-        updateJumpingPlayer(deltaTime)
+        spawnSystem?.update(deltaTime: deltaTime)
+        updateJumpingPlayer(deltaTime: deltaTime)
         
         if let vehicle = currentVehicleEntity, let player = playerEntity {
             if playerState == .riding {
                 movementSystem.updateLerp(vehicle: vehicle, deltaTime: deltaTime)
                 player.place(on: vehicle)
-                
-                // Update komponen kemarahan kendaraan setiap frame
-                vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: deltaTime)
+            }
+
+            // --- DEBUG: Show vehicle hitbox (OFF) ---
+            // vehicle.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: vehicle.node, color: .green)
+
+            // 1. Cek tabrakan dengan rintangan (Batu, Pohon, dll)
+            if let obstacles = spawnSystem?.obstacleEntities {
+
+                // --- DEBUG: Show all obstacle hitboxes (OFF) ---
+                /*
+                for obs in obstacles {
+                    obs.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: obs.node, color: .red)
+                }
+                */
+
+                if let hitObstacle = collisionSystem.checkCollision(vehicle: vehicle, with: obstacles) {
+                    print("Collision with \(hitObstacle.type.rawValue)")
+                    
+                    // TODO: Replace this pause logic with a formal Game Over sequence/Scene transition
+                    gameState = .gameOver
+                    playerState = .crashed
+                }
             }
 
         }
@@ -215,13 +234,18 @@ private extension GameScene {
         gameplayNode.zPosition = RenderLayer.vehicle
         addChild(gameplayNode)
         
-        let ringDiameter = configuration.latchDistance * 2
-        let path = CGPath(ellipseIn: CGRect(x: -ringDiameter/2, y: -ringDiameter/2, width: ringDiameter, height: ringDiameter), transform: nil)
-        targetReticleNode.path = path
+//        let ringDiameter = configuration.latchDistance * 2
+//        let path = CGPath(ellipseIn: CGRect(x: -ringDiameter/2, y: -ringDiameter/2, width: ringDiameter, height: ringDiameter), transform: nil)
+//        targetReticleNode.path = path
+        let ringRadius = configuration.latchDistance
+        targetReticleNode.path = CGPath(ellipseIn: CGRect(x: -ringRadius, y: -ringRadius, width: ringRadius*2, height: ringRadius*2), transform: nil)
+        targetReticleNode.zPosition = -1
         targetReticleNode.strokeColor = SKColor(red: 1.00, green: 0.86, blue: 0.24, alpha: 1.0)
         targetReticleNode.lineWidth = 4
         targetReticleNode.alpha = 0
-        targetReticleNode.zPosition = RenderLayer.overlay
+        
+        targetReticleNode.xScale = 1.0
+        targetReticleNode.yScale = 1.0
         worldNode.addChild(targetReticleNode)
     }
 
@@ -372,7 +396,7 @@ private extension GameScene {
             
             if let target = bestTarget {
                 targetTimeScale = 0.6
-                targetReticleNode.position = target.node.position
+                targetReticleNode.position = CGPoint(x: target.node.position.x, y: target.node.position.y + 40)
                 
                 if targetReticleNode.alpha == 0 {
                     targetReticleNode.run(SKAction.fadeAlpha(to: 1.0, duration: 0.15))
