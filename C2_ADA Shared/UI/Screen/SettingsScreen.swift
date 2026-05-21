@@ -25,8 +25,7 @@ final class SettingsScreen: SKNode {
     // supaya layout tidak ikut kacau oleh scaling asset
     private let contentNode = SKNode()
 
-    private let closeButton = SKShapeNode()
-    private let closeLabel = SKLabelNode(fontNamed: "Great Lakes NF")
+    private let closeButton = SKSpriteNode(imageNamed: "BACK BUTTON")
 
     // MARK: - Labels
 
@@ -60,7 +59,7 @@ final class SettingsScreen: SKNode {
 
         addChild(contentNode)
 
-        setupCloseButton()
+        setupCloseButton(sceneSize: sceneSize)
         setupContent()
         setupCallbacks()
     }
@@ -86,9 +85,9 @@ private extension SettingsScreen {
             transform: nil
         )
 
-        dimNode.fillColor = SKColor(red: 0.76, green: 0.55, blue: 0.35, alpha: 1.0)
+        dimNode.fillColor = .black
         dimNode.strokeColor = .clear
-        dimNode.alpha = 1.0 // Tidak transparan (tebal)
+        dimNode.alpha = 0.70
         dimNode.zPosition = -1
 
         addChild(dimNode)
@@ -110,50 +109,27 @@ private extension SettingsScreen {
         addChild(settingsBlock)
     }
 
-    func setupCloseButton() {
+    func setupCloseButton(sceneSize: CGSize) {
 
         closeButton.name = "closeSettings"
 
-        // Membuat bentuk persegi panjang tumpul (rounded rect) seperti tombol
-        let btnWidth: CGFloat = 140
-        let btnHeight: CGFloat = 44
-        
-        closeButton.path = CGPath(
-            roundedRect: CGRect(
-                x: -btnWidth / 2,
-                y: -btnHeight / 2,
-                width: btnWidth,
-                height: btnHeight
-            ),
-            cornerWidth: 8,
-            cornerHeight: 8,
-            transform: nil
+        // Samakan lebar dengan settingsBlock (1.05 * sceneSize.width)
+        // SpriteNodeHelper.resize otomatis menjaga aspek rasio
+        SpriteNodeHelper.resize(
+            node: closeButton,
+            width: sceneSize.width * 0.75
         )
-        
 
-        closeButton.fillColor = SKColor(red: 0.45, green: 0.30, blue: 0.18, alpha: 1.0)
-        closeButton.strokeColor = SKColor(red: 0.30, green: 0.18, blue: 0.10, alpha: 1.0)
-        closeButton.lineWidth = 3
-
+        // Posisi di paling bawah layar. 
+        // Dihitung relatif terhadap contentNode agar tetap sejajar secara horizontal (x: 0)
+        // y: -sceneSize.height * 0.45 menempatkannya di dekat tepi bawah layar
         closeButton.position = CGPoint(
-            x: 8,
-            y: -160
+            x: 6,
+            y: -sceneSize.height * 0.42 - settingsBlock.position.y
         )
 
         closeButton.zPosition = 10
 
-        // Label CLOSE
-        closeLabel.name = "closeSettings"
-        closeLabel.text = "CLOSE"
-        closeLabel.fontSize = 22
-        closeLabel.fontColor = .white
-        closeLabel.verticalAlignmentMode = .center
-        closeLabel.zPosition = 1
-        
-        // Agar sentuhan pada label tembus ke tombol di bawahnya
-        closeLabel.isUserInteractionEnabled = false
-        
-        closeButton.addChild(closeLabel)
         contentNode.addChild(closeButton)
     }
 
