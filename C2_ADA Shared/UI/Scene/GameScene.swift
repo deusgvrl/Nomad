@@ -103,6 +103,9 @@ final class GameScene: SKScene {
             if playerState == .riding {
                 movementSystem.updateLerp(vehicle: vehicle, deltaTime: deltaTime)
                 player.place(on: vehicle)
+                
+                // Update komponen kemarahan kendaraan setiap frame
+                vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: deltaTime)
             }
 
         }
@@ -298,7 +301,7 @@ private extension GameScene {
     }
 }
 
-// MARK: - Frame Updatex
+// MARK: - Frame Update
 
 private extension GameScene {
 
@@ -371,6 +374,15 @@ private extension GameScene {
         case .holding(let startLocation) where gameState == .waitingToStart:
             // First hold begins the run and attaches the player to the car.
             playerEntity.attach(to: currentVehicleEntity)
+            
+            // Siapkan callback untuk lompat paksa
+            currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.onJumpRequested = { [weak self] in
+                self?.forcePlayerToJump()
+            }
+            
+            // Mulai siklus kemarahan
+            currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.startRageCycle()
+            
             movementSystem.beginSteering(vehicle: currentVehicleEntity, at: startLocation)
             gameState = .playing
             playerState = .riding
@@ -390,23 +402,8 @@ private extension GameScene {
 
         case .released where gameState == .playing && playerState == .riding:
             // Releasing detaches the player and starts the forward jump arc.
-            movementSystem.endSteering(vehicle: currentVehicleEntity)
-        
-    
-            spawnSystem?.adopt(oldVehicle: currentVehicleEntity)
-                
-            currentVehicleEntity.removeComponent(ofType: MovementComponent.self)
-                
-            // Creating a new MovementComponent with speed: 0 for a receding movement.
-            let recedingMovement = MovementComponent(speed: 0)
-            currentVehicleEntity.addComponent(recedingMovement)
-            
-            
-            
-            launchSystem?.launch(player: playerEntity)
-            
-            playerEntity.playJumpVisual()
-            playerState = .jumping
+            // Pindah jadi function, biar bisa di reuse untuk rage counter
+            forcePlayerToJump()
 
         case .holding(let startLocation) where gameState == .playing && playerState == .jumping:
             // Holding again while airborne attempts to latch. For this movement
@@ -435,6 +432,33 @@ private extension GameScene {
 // MARK: - Movement State Helpers
 
 private extension GameScene {
+    
+    /// Executes the jumping sequence, detaching the player and launching them forward.
+    func forcePlayerToJump() {
+        guard let currentVehicleEntity, let playerEntity, playerState == .riding else { return }
+        
+        movementSystem.endSteering(vehicle: currentVehicleEntity)
+        
+        // Menambahkan delay sebelum kendaraan kembali ke kondisi Idle agar efek marahnya masih terlihat sejenak
+        let wait = SKAction.wait(forDuration: 0.3)
+        let reset = SKAction.run { [weak currentVehicleEntity] in
+            //Reset state kendaraan kembali ke idle
+            currentVehicleEntity?.component(ofType: VehicleRageComponent.self)?.resetRageCycle()
+        }
+        currentVehicleEntity.node.run(SKAction.sequence([wait, reset]))
+        
+        spawnSystem?.adopt(oldVehicle: currentVehicleEntity)
+            
+        currentVehicleEntity.removeComponent(ofType: MovementComponent.self)
+        
+        // Creating a new MovementComponent with speed: 0 for a receding movement.
+        let recedingMovement = MovementComponent(speed: 0)
+        currentVehicleEntity.addComponent(recedingMovement)
+        
+        launchSystem?.launch(player: playerEntity)
+        playerEntity.playJumpVisual()
+        playerState = .jumping
+    }
     
     /// Movement-focused placeholder for missed jumps and falls.
     ///
@@ -494,6 +518,13 @@ private extension GameScene {
         // 5. Attach player (this also reparents player to the vehicle)
         playerEntity.attach(to: vehicle)
         currentVehicleEntity = vehicle
+        
+        // Siapkan callback untuk lompat paksa pada mobil baru
+        vehicle.component(ofType: VehicleRageComponent.self)?.onJumpRequested = { [weak self] in
+            self?.forcePlayerToJump()
+        }
+        // Mulai siklus kemarahan
+        vehicle.component(ofType: VehicleRageComponent.self)?.startRageCycle()
         
         if let startLocation {
             movementSystem.beginSteering(vehicle: vehicle, at: startLocation)
