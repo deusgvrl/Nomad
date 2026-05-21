@@ -102,7 +102,7 @@ final class GameScene: SKScene {
         guard gameState == .playing else { return }
 
         spawnSystem?.update(deltaTime: deltaTime)
-        updateJumpingPlayer(deltaTime: deltaTime)
+        updateJumpingPlayer(deltaTime)
         
         if let vehicle = currentVehicleEntity, let player = playerEntity {
             if playerState == .riding {
