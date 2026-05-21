@@ -103,6 +103,7 @@ final class GameScene: SKScene {
 
         spawnSystem?.update(deltaTime: deltaTime)
         updateJumpingPlayer(deltaTime)
+        updateDistanceScore(deltaTime)
         
         if let vehicle = currentVehicleEntity, let player = playerEntity {
             if playerState == .riding {
@@ -112,6 +113,10 @@ final class GameScene: SKScene {
 
             // --- DEBUG: Show vehicle hitbox (OFF) ---
             // vehicle.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: vehicle.node, color: .green)
+            
+            
+            // Update rage State
+            vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: <#T##TimeInterval#>)
 
             // 1. Cek tabrakan dengan rintangan (Batu, Pohon, dll)
             if let obstacles = spawnSystem?.obstacleEntities {
