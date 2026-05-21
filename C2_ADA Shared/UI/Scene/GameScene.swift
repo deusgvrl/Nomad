@@ -118,7 +118,7 @@ final class GameScene: SKScene {
             
             
             // Update rage State
-            vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: <#T##TimeInterval#>)
+            vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: deltaTime)
 
             // 1. Cek tabrakan dengan rintangan (Batu, Pohon, dll)
             if let obstacles = spawnSystem?.obstacleEntities {
@@ -226,7 +226,7 @@ extension GameScene {
         setUpMovementPrototype()
         setUpMovementBoundsGuide()
         showMenuScreen()
-        gameOverOverlayNode = nil
+//        gameOverOverlayNode = nil
 
         gameOverScreen = nil
         gameState = .waitingToStart

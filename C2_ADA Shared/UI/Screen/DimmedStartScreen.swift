@@ -16,7 +16,9 @@ final class DimmedStartScreen: SKNode {
     // MARK: - UI Nodes
     
     private let dimNode = SKShapeNode()
-    private let holdLabel = SKLabelNode(fontNamed: "Great Lakes Nf Bold")
+    private let holdLabel = SKLabelNode(
+        fontNamed: GameConfiguration.standard.primaryFontName
+    )
 
     // MARK: - Initialization
 
@@ -58,31 +60,53 @@ private extension DimmedStartScreen {
             blue: 5/255,
             alpha: 1.0
         )
-        dimNode.alpha = 0.78
+        dimNode.alpha = 0.925
         
         addChild(dimNode)
     }
 
     func setupLabel() {
-        holdLabel.text = "HOLD TO START"
-        holdLabel.fontName = "Great Lakes Nf Bold"
-        holdLabel.fontSize = 34
-        holdLabel.fontColor = SKColor(
-            red: 246/255,
-            green: 167/255,
-            blue: 76/255,
-            alpha: 1.0
+        // Menggunakan helper makeLabel dengan font primary dari registry
+        let label = makeLabel(
+            text: "HOLD TO START",
+            fontName: GameConfiguration.standard.primaryFontName,
+            fontSize: 45,
+            color: SKColor(red: 246/255, green: 167/255, blue: 76/255, alpha: 1.0)
         )
-        
-        holdLabel.position = CGPoint(x: 0, y: -40)
-        
+
+        label.position = CGPoint(x: 0, y: -40)
+
+        // Update referensi holdLabel
+        holdLabel.removeFromParent() // Hapus default jika ada
+        holdLabel.text = label.text
+        holdLabel.fontName = label.fontName
+        holdLabel.fontSize = label.fontSize
+        holdLabel.fontColor = label.fontColor
+        holdLabel.position = label.position
+
         addChild(holdLabel)
         animateLabel()
     }
 
+    func makeLabel(
+        text: String,
+        fontName: String,
+        fontSize: CGFloat,
+        color: SKColor
+    ) -> SKLabelNode {
+        let label = SKLabelNode(fontNamed: fontName)
+        label.text = text
+        label.fontSize = fontSize
+        label.fontColor = color
+        label.horizontalAlignmentMode = .center
+        label.verticalAlignmentMode = .center
+        label.zPosition = 2
+        return label
+    }
+
     func animateLabel() {
-        let fadeOut = SKAction.fadeAlpha(to: 0.35, duration: 0.8)
-        let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.8)
+        let fadeOut = SKAction.fadeAlpha(to: 0.35, duration: 0.5)
+        let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.5)
 
         holdLabel.run(
             SKAction.repeatForever(

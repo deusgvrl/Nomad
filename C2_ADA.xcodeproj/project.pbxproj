@@ -11,6 +11,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		32AF65602FBF14FF00AF3336 /* Exceptions for "iOS App" folder in "C2_ADA iOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
+		};
 		4FF7334D2FAC93D000E2CC60 /* Exceptions for "C2_ADA Shared" folder in "C2_ADA iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -35,8 +42,8 @@
 				ECS/Helper/IsometricHelper.swift,
 				ECS/Helper/NomadAsset.swift,
 				ECS/Helper/ObstacleHelper.swift,
-				ECS/Helper/SpriteNodeHelper.swift,
 				ECS/Helper/RenderLayer.swift,
+				ECS/Helper/SpriteNodeHelper.swift,
 				ECS/Helper/WallHelper.swift,
 				ECS/System/CollisionSystem.swift,
 				ECS/System/InputSystem.swift,
@@ -59,18 +66,11 @@
 				UI/Node/VehicleNode.swift,
 				UI/Node/WallNode.swift,
 				UI/Scene/GameScene.swift,
+				"UI/Scene/GameScene+GameOver.swift",
 				UI/Screen/DimmedStartScreen.swift,
+				UI/Screen/GameOverScreen.swift,
 				UI/Screen/MenuScreen.swift,
 				UI/Screen/SettingsScreen.swift,
-				"UI/Scene/GameScene+GameOver.swift",
-				UI/Screen/GameOverScreen.swift,
-			);
-			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
-		};
-		4FF733512FAC93D000E2CC60 /* Exceptions for "iOS App" folder in "C2_ADA iOS" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
 		};
@@ -88,7 +88,7 @@
 		4FF7333E2FAC93D000E2CC60 /* iOS App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4FF733512FAC93D000E2CC60 /* Exceptions for "iOS App" folder in "C2_ADA iOS" target */,
+				32AF65602FBF14FF00AF3336 /* Exceptions for "iOS App" folder in "C2_ADA iOS" target */,
 			);
 			path = "iOS App";
 			sourceTree = "<group>";

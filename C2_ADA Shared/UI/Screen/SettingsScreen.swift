@@ -30,11 +30,11 @@ final class SettingsScreen: SKNode {
     // MARK: - Labels
 
     private let musicLabel = SKLabelNode(
-        fontNamed: "Great Lakes NF"
+        fontNamed: GameConfiguration.standard.secondaryFontName
     )
 
     private let hapticsLabel = SKLabelNode(
-        fontNamed: "Great Lakes NF"
+        fontNamed: GameConfiguration.standard.secondaryFontName
     )
 
     // MARK: - Toggles
@@ -148,17 +148,23 @@ private extension SettingsScreen {
 
         // MARK: Music Label
 
-        musicLabel.text = "Music"
-
-        musicLabel.fontSize = 24
-        musicLabel.fontColor = labelColor
-        musicLabel.horizontalAlignmentMode = .left
-        musicLabel.zPosition = 1
-
-        musicLabel.position = CGPoint(
-            x: labelX,
-            y: musicY
+        let musicLabelNode = makeLabel(
+            text: "Music",
+            fontName: GameConfiguration.standard.secondaryFontName,
+            fontSize: 24,
+            color: labelColor
         )
+        musicLabelNode.horizontalAlignmentMode = .left
+        musicLabelNode.position = CGPoint(x: labelX, y: musicY)
+        
+        // Copy properties to private node
+        musicLabel.text = musicLabelNode.text
+        musicLabel.fontName = musicLabelNode.fontName
+        musicLabel.fontSize = musicLabelNode.fontSize
+        musicLabel.fontColor = musicLabelNode.fontColor
+        musicLabel.horizontalAlignmentMode = musicLabelNode.horizontalAlignmentMode
+        musicLabel.position = musicLabelNode.position
+        musicLabel.zPosition = 1
 
         contentNode.addChild(musicLabel)
 
@@ -174,17 +180,23 @@ private extension SettingsScreen {
 
         // MARK: Haptics Label
 
-        hapticsLabel.text = "Haptics"
-
-        hapticsLabel.fontSize = 24
-        hapticsLabel.fontColor = labelColor
-        hapticsLabel.horizontalAlignmentMode = .left
-        hapticsLabel.zPosition = 1
-
-        hapticsLabel.position = CGPoint(
-            x: labelX,
-            y: hapticsY
+        let hapticsLabelNode = makeLabel(
+            text: "Haptics",
+            fontName: GameConfiguration.standard.secondaryFontName,
+            fontSize: 24,
+            color: labelColor
         )
+        hapticsLabelNode.horizontalAlignmentMode = .left
+        hapticsLabelNode.position = CGPoint(x: labelX, y: hapticsY)
+
+        // Copy properties to private node
+        hapticsLabel.text = hapticsLabelNode.text
+        hapticsLabel.fontName = hapticsLabelNode.fontName
+        hapticsLabel.fontSize = hapticsLabelNode.fontSize
+        hapticsLabel.fontColor = hapticsLabelNode.fontColor
+        hapticsLabel.horizontalAlignmentMode = hapticsLabelNode.horizontalAlignmentMode
+        hapticsLabel.position = hapticsLabelNode.position
+        hapticsLabel.zPosition = 1
 
         contentNode.addChild(hapticsLabel)
 
@@ -197,6 +209,22 @@ private extension SettingsScreen {
         hapticsToggle.zPosition = 1
 
         contentNode.addChild(hapticsToggle)
+    }
+
+    func makeLabel(
+        text: String,
+        fontName: String,
+        fontSize: CGFloat,
+        color: SKColor
+    ) -> SKLabelNode {
+        let label = SKLabelNode(fontNamed: fontName)
+        label.text = text
+        label.fontSize = fontSize
+        label.fontColor = color
+        label.horizontalAlignmentMode = .center
+        label.verticalAlignmentMode = .center
+        label.zPosition = 2
+        return label
     }
 
     func setupCallbacks() {
