@@ -19,8 +19,9 @@ struct IsometricHelper {
         return CGPoint(x: -x, y: y)
     }
 
+    // MARK: - Tile Render Layer
     // Mengatur urutan layer (depth) tile pada tampilan isometric (makin jauh makin dalam).
-    static func getZPosition (row:Int, col:Int) -> CGFloat {
+    static func getTileRenderLayer(row: Int, col: Int) -> CGFloat {
         return CGFloat(-(row + col))
     }
 }

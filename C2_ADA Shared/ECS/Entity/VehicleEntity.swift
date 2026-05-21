@@ -38,6 +38,10 @@ final class VehicleEntity: GKEntity {
         if let vehicleNode = node as? VehicleNode {
             // MENGAMBIL: Array berisi banyak bentuk kotak tabrakan dari Enum VehicleType
             addComponent(HitboxComponent(shapes: vehicleNode.vehicleType.hitboxShapes))
+            
+            // MENAMBAHKAN: Komponen kemarahan (Rage) untuk mengelola status mobil
+            addComponent(VehicleRageComponent(node: vehicleNode))
+            
         } else {
             // Fallback for generic nodes (tetap menggunakan satu kotak default)
             let hitboxWidth = node.frame.width * 0.7
@@ -51,13 +55,14 @@ final class VehicleEntity: GKEntity {
         
         let vehicleNode = Self.makeVehicleNode(configuration: configuration)
         vehicleNode.name = "vehicle"
-        vehicleNode.zPosition = ZPosition.vehicle
+        vehicleNode.zPosition = RenderLayer.vehicle
         vehicleNode.position = configuration.currentVehiclePosition
         
         let steering = MovementComponent(
-            position: configuration.currentVehiclePosition,
+            anchorPosition: configuration.currentVehiclePosition,
+            currentPosition: configuration.currentVehiclePosition,
             screenSize: configuration.referenceScreenSize,
-            vehicleSize: configuration.vehicleSize,
+            vehicleSize: configuration.vehicleMovementBoundsSize,
             movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
             movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
             dragSensitivity: configuration.dragSensitivity
@@ -69,7 +74,7 @@ final class VehicleEntity: GKEntity {
 //    init(configuration: GameConfiguration) {
 //        let vehicleNode = Self.makeVehicleNode(configuration: configuration)
 //        vehicleNode.name = "vehicle"
-//        vehicleNode.zPosition = ZPosition.vehicle
+//        vehicleNode.zPosition = RenderLayer.vehicle
 //        vehicleNode.position = configuration.currentVehiclePosition
 //        self.node = vehicleNode
 //

@@ -20,6 +20,7 @@ final class PlayerEntity: GKEntity {
 
     let node: SKNode
 
+
     // MARK: - Placement Tuning
 
     private let rideOffset: CGVector
@@ -31,10 +32,11 @@ final class PlayerEntity: GKEntity {
 
         let playerNode = Self.makePlayerNode(configuration: configuration)
         playerNode.name = "player"
-        playerNode.zPosition = ZPosition.player
+        playerNode.zPosition = RenderLayer.player
         self.node = playerNode
 
         super.init()
+    
 
         addComponent(NodeComponent(node: playerNode))
         addComponent(InputIntentComponent())
@@ -94,4 +96,31 @@ final class PlayerEntity: GKEntity {
 
         return playerNode
     }
+    
+    // MARK: - Visual Animation
+    func playJumpVisual(duration: TimeInterval) {
+        // MARK: Jump Visual Timing
+        // Match the visual airborne timing to the lane movement duration so the
+        // player does not return to normal size and appear to glide on the floor.
+        let halfDuration = max(duration / 2, 0.05)
+
+        let grow = SKAction.scale(to: 1.5, duration: halfDuration)
+        grow.timingMode = .easeOut
+        
+        let shrink = SKAction.scale(to: 1.0, duration: halfDuration)
+        shrink.timingMode = .easeIn
+        
+        let sequence = SKAction.sequence([grow, shrink])
+        node.run(sequence)
+    }
+    
+    func cancelJumpVisual() {
+        node.removeAllActions()
+        
+        let resetScale = SKAction.scale(to: 1.0, duration: 0.15)
+        resetScale.timingMode = .easeOut
+        node.run(resetScale)
+    }
+    
+    
 }

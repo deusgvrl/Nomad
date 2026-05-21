@@ -51,7 +51,7 @@ final class CollisionSystem {
               let playerParent = playerVehicle.node.parent else {
             return nil
         }
-
+        
         for playerShape in playerHitbox.shapes {
             let playerVertices = getVertices(for: playerVehicle.node, shape: playerShape, relativeTo: playerParent)
 
@@ -59,7 +59,7 @@ final class CollisionSystem {
                 guard other !== playerVehicle else { continue }
                 
                 guard let otherHitbox = other.component(ofType: HitboxComponent.self),
-                      let otherParent = other.node.parent else {
+                    other.node.parent != nil else {
                     continue
                 }
 

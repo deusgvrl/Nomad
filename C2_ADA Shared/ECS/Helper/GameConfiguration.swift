@@ -31,7 +31,7 @@ struct GameConfiguration {
         movementAxisAngleInDegrees: 16,
         // Rough canyon/wall limits measured from the hi-fi grid prototype.
         // These are offsets from `currentVehiclePosition` along the movement axis.
-        movementAxisXOffsetBounds: -55...265,
+        movementAxisXOffsetBounds: -55...305,
         showsMovementBoundsGuide: false,
         dragSensitivity: 1.0,
         // Width of the gray road band. Movement clamps inside this width.
@@ -39,7 +39,7 @@ struct GameConfiguration {
         // Bottom-center x location of the road before projecting forward.
         roadBottomCenterXPosition: -212,
         // First playable vehicle slot from the lo-fi reference.
-        currentVehiclePosition: CGPoint(x: -115, y: -170),
+        currentVehiclePosition: CGPoint(x: -115, y: -70),
         obstaclePositions: [
             CGPoint(x: 45, y: 125),
             CGPoint(x: 130, y: -20),
@@ -51,13 +51,35 @@ struct GameConfiguration {
         vehicleSize: CGSize(width: 104, height: 104),
         playerSize: CGSize(width: 52, height: 84),
         obstacleSize: CGSize(width: 36, height: 92),
+        // MARK: Game Typography
+        // Primary typeface for major whole-game display text.
+        primaryFontName: "GreatLakesNF",
+        // Secondary typeface for supporting whole-game labels and buttons.
+        secondaryFontName: "Estandar-Regular",
+        // MARK: Forward Jump
+        // The player jump position follows this road-forward lane angle as a
+        // straight line; the sprite animation supplies the jump-height illusion.
         launchForwardAngleInDegrees: 60,
-        launchVelocity: 360,
-        launchForwardThrust: 180,
-        launchGravity: 920,
+        launchVelocity: 320,
+        launchForwardThrust: 50,
+        launchGravity: 1100,
         latchDistance: 52,
-        groundYPosition: -345,
-        maximumDeltaTime: 1.0 / 30.0
+        groundYPosition: -280,
+        maximumDeltaTime: 1.0 / 30.0,
+        // MARK: Game Over Prototype
+        // Temporary score preview stays isolated here so the real distance
+        // counter can replace it without touching the game-over screen.
+        debugDistancePreviewEnabled: true,
+        debugDistancePreviewMetersPerSecond: 125,
+        // Jump forward distance is projected through the 60-degree road angle.
+        // Keeping this compact stops missed jumps from gliding too far ahead.
+        jumpForwardDistance: 50,
+        // Slower lane travel gives the player more readable time to latch.
+        jumpForwardDuration: 0.85,
+        playerFallSettleDuration: 0.18,
+        // Try Again is scaled from the imported wooden-button asset while
+        // preserving its wide aspect ratio from the design reference.
+        gameOverTryAgainButtonSize: CGSize(width: 300, height: 140)
     )
 
     // MARK: - Screen And Road
@@ -81,21 +103,52 @@ struct GameConfiguration {
     let playerSize: CGSize
     let obstacleSize: CGSize
 
+    // MARK: - Game Typography
+
+    // MARK: Primary Typeface
+    /// Main display font for large game-wide headings, scores, and branded UI.
+    let primaryFontName: String
+
+    // MARK: Secondary Typeface
+    /// Supporting font for smaller game-wide labels, helper text, and buttons.
+    let secondaryFontName: String
+
     // MARK: - Launch And Latch
 
+    /// Road-forward direction used by linear player jumps and failed-latch falls.
     let launchForwardAngleInDegrees: CGFloat
+    /// Legacy prototype tuning kept for compatibility with older tuning passes.
     let launchVelocity: CGFloat
+    /// Legacy prototype thrust kept for compatibility with older tuning passes.
     let launchForwardThrust: CGFloat
+    /// Legacy prototype gravity kept for compatibility with older tuning passes.
     let launchGravity: CGFloat
     let latchDistance: CGFloat
     let groundYPosition: CGFloat
     let maximumDeltaTime: TimeInterval
+
+    // MARK: - Game Over Prototype
+
+    let debugDistancePreviewEnabled: Bool
+    let debugDistancePreviewMetersPerSecond: CGFloat
+    let jumpForwardDistance: CGFloat
+    let jumpForwardDuration: TimeInterval
+    let playerFallSettleDuration: TimeInterval
+    let gameOverTryAgainButtonSize: CGSize
 
     // MARK: - Derived Bounds
 
     var playableXBounds: ClosedRange<CGFloat> {
         let halfPlayableWidth = referenceScreenSize.width * playableWidthFraction / 2
         return -halfPlayableWidth...halfPlayableWidth
+    }
+
+    /// Size used only for movement clamping.
+    ///
+    /// `CAR IDLE` has transparent padding around the visible vehicle, so using
+    /// the full sprite size stops the car too early near the phone edge.
+    var vehicleMovementBoundsSize: CGSize {
+        CGSize(width: vehicleSize.width * 0.55, height: vehicleSize.height)
     }
 
     /// Bottom-center point of the road in the centered SpriteKit scene.
@@ -128,5 +181,28 @@ struct GameConfiguration {
 
     var movementAxisEndPosition: CGPoint {
         movementAxisPosition(xOffset: movementAxisXOffsetBounds.upperBound)
+    }
+
+    // MARK: - Jump Forward Line
+
+    /// Unit vector for the 60-degree road-forward jump direction.
+    ///
+    /// SpriteKit uses positive Y upward, so this projects the player up-right
+    /// along the road instead of along the shallow steering line.
+    var jumpForwardUnitVector: CGVector {
+        let radians = Double(launchForwardAngleInDegrees) * Double.pi / 180
+        return CGVector(
+            dx: CGFloat(cos(radians)),
+            dy: CGFloat(sin(radians))
+        )
+    }
+
+    /// Target point for failed jumps, derived from the linear 60-degree road
+    /// direction so the player lands in front instead of drifting sideways.
+    func jumpForwardLandingPosition(from startPosition: CGPoint) -> CGPoint {
+        CGPoint(
+            x: startPosition.x + jumpForwardUnitVector.dx * jumpForwardDistance,
+            y: startPosition.y + jumpForwardUnitVector.dy * jumpForwardDistance
+        )
     }
 }

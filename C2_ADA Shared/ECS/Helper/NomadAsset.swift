@@ -68,4 +68,8 @@ enum NomadAsset: String {
     case sandSplash = "SandSplash"
     case smoke = "Smoke"
     case sandParticle = "SandParticle"
+
+    // MARK: Game Over UI
+
+    case tryAgainButton = "TRY AGAIN BUTTON"
 }
