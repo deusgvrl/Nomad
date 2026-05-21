@@ -73,7 +73,7 @@ struct GameConfiguration {
         debugDistancePreviewMetersPerSecond: 125,
         // Jump forward distance is projected through the 60-degree road angle.
         // Keeping this compact stops missed jumps from gliding too far ahead.
-        jumpForwardDistance: 90,
+        jumpForwardDistance: 50,
         // Slower lane travel gives the player more readable time to latch.
         jumpForwardDuration: 0.85,
         playerFallSettleDuration: 0.18,

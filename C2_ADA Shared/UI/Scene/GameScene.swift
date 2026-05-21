@@ -545,7 +545,7 @@ private extension GameScene {
         currentVehicleEntity.addComponent(recedingMovement)
         
         launchSystem?.launch(player: playerEntity)
-        playerEntity.playJumpVisual()
+        playerEntity.playJumpVisual(duration: configuration.jumpForwardDuration)
         playerState = .jumping
     }
     
