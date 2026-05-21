@@ -211,7 +211,7 @@ final class GameScene: SKScene {
 
 extension GameScene {
 
-    func setUpScene() {
+    func setUpScene(skipsMenu: Bool = false) {
         GameFontRegistry.registerGameFontsIfNeeded(configuration: configuration)
 
         removeAllChildren()
@@ -225,14 +225,19 @@ extension GameScene {
         setUpSpawnSystem()
         setUpMovementPrototype()
         setUpMovementBoundsGuide()
-        showMenuScreen()
-//        gameOverOverlayNode = nil
 
         gameOverScreen = nil
         gameState = .waitingToStart
         playerState = .idle
         lastUpdateTime = 0
         distanceScoreSystem.resetRun()
+        inputSystem.reset()
+
+        if skipsMenu {
+            showDimmedStartScreen()
+        } else {
+            showMenuScreen()
+        }
     }
 }
 
