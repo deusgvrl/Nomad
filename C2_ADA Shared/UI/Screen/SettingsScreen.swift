@@ -87,7 +87,7 @@ private extension SettingsScreen {
 
         dimNode.fillColor = .black
         dimNode.strokeColor = .clear
-        dimNode.alpha = 0.70
+        dimNode.alpha = 0.85
         dimNode.zPosition = -1
 
         addChild(dimNode)
@@ -119,13 +119,14 @@ private extension SettingsScreen {
             node: closeButton,
             width: sceneSize.width * 0.75
         )
+        closeButton.size.height *= 0.8
 
         // Posisi di paling bawah layar. 
         // Dihitung relatif terhadap contentNode agar tetap sejajar secara horizontal (x: 0)
         // y: -sceneSize.height * 0.45 menempatkannya di dekat tepi bawah layar
         closeButton.position = CGPoint(
             x: 6,
-            y: -sceneSize.height * 0.42 - settingsBlock.position.y
+            y: -sceneSize.height * 0.43 - settingsBlock.position.y
         )
 
         closeButton.zPosition = 10
