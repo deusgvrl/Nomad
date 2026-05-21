@@ -54,11 +54,13 @@
 				UI/Node/FloorNode.swift,
 				UI/Node/ObstacleNode.swift,
 				UI/Node/RowNode.swift,
+				UI/Node/ToogleSwitchNode.swift,
 				UI/Node/VehicleNode.swift,
 				UI/Node/WallNode.swift,
 				UI/Scene/GameScene.swift,
 				UI/Screen/DimmedStartScreen.swift,
 				UI/Screen/MenuScreen.swift,
+				UI/Screen/SettingsScreen.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
 		};

@@ -27,12 +27,16 @@ final class MenuScreen: SKNode {
 
     private let settingsButton =
     SKSpriteNode(imageNamed: "SETTINGS BUTTON")
+    
+    private let settingsScreen: SettingsScreen
 
     // MARK: - Initialization
 
     init(sceneSize: CGSize) {
+        settingsScreen = SettingsScreen(sceneSize: sceneSize)
         super.init()
 
+        
         name = "menuScreen"
         zPosition = 9999
 
@@ -83,6 +87,7 @@ private extension MenuScreen {
     }
 
     func setupButtons(sceneSize: CGSize) {
+        addChild(settingsScreen)
         setupStartButton(sceneSize: sceneSize)
         setupSettingsButton(sceneSize: sceneSize)
     }
@@ -124,6 +129,14 @@ private extension MenuScreen {
 
 extension MenuScreen {
     func handleTouch(at location: CGPoint) {
+        // Jika settings sedang tampil,
+            // semua touch diarahkan ke settings overlay
+        if !settingsScreen.isHidden {
+
+            settingsScreen.handleTouch(at: location)
+            return
+        }
+        
         guard let tappedNode =
                 atPoint(location) as? SKSpriteNode else {
             return
@@ -138,9 +151,16 @@ extension MenuScreen {
             }
 
         case "settingsButton":
+
             animateButton(settingsButton)
+
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.onSettingsTapped?()
+
+                guard let scene = self.scene else {
+                    return
+                }
+
+                self.settingsScreen.show(in: scene)
             }
 
         default:
