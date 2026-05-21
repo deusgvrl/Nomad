@@ -111,37 +111,16 @@ final class GameScene: SKScene {
                 player.place(on: vehicle)
             }
 
-            // --- DEBUG: Show vehicle hitbox (OFF) ---
-            // vehicle.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: vehicle.node, color: .green)
-            
+            // MARK: Riding Collision Game Over
+            // CollisionSystem checks the active vehicle's hitboxes while the
+            // player is riding. A collision now flows through the real game-over
+            // entry instead of only flipping state.
+            if updateCollisionGameOverIfNeeded(for: vehicle) { return }
             
             // Update rage State
-            vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: <#T##TimeInterval#>)
-
-            // 1. Cek tabrakan dengan rintangan (Batu, Pohon, dll)
-            if let obstacles = spawnSystem?.obstacleEntities {
-
-                // --- DEBUG: Show all obstacle hitboxes (OFF) ---
-                /*
-                for obs in obstacles {
-                    obs.component(ofType: HitboxComponent.self)?.showDebugHitbox(in: obs.node, color: .red)
-                }
-                */
-
-                if let hitObstacle = collisionSystem.checkCollision(vehicle: vehicle, with: obstacles) {
-                    print("Collision with \(hitObstacle.type.rawValue)")
-                    
-                    // TODO: Replace this pause logic with a formal Game Over sequence/Scene transition
-                    gameState = .gameOver
-                    playerState = .crashed
-                }
-            }
-
+            vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: deltaTime)
         }
-        
-//        if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
-//            player.place(on: vehicle)
-//        }
+
         
         if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
             player.place(on: vehicle)
