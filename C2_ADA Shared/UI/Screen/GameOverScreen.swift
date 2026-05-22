@@ -71,13 +71,16 @@ final class GameOverScreen: SKNode {
         // frames in its own coordinate space.
         let screenLocation = parent?.convert(location, to: self) ?? location
 
-        if isTouch(screenLocation, inside: retryButtonNode, xInset: -18, yInset: -10) {
-            onTryAgain?()
+        // MARK: Home Priority
+        // Home sits close to the Try Again asset. Check it first so taps on the
+        // underlined text do not accidentally hit the larger Try Again frame.
+        if isTouch(screenLocation, inside: homeButtonNode, xInset: -16, yInset: -10) {
+            onHome?()
             return true
         }
 
-        if isTouch(screenLocation, inside: homeButtonNode, xInset: -16, yInset: -10) {
-            onHome?()
+        if isTouch(screenLocation, inside: retryButtonNode, xInset: -18, yInset: -10) {
+            onTryAgain?()
             return true
         }
 

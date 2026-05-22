@@ -72,4 +72,8 @@ enum NomadAsset: String {
     // MARK: Game Over UI
 
     case tryAgainButton = "TRY AGAIN BUTTON"
+
+    // MARK: Game HUD UI
+
+    case pauseButton = "PAUSE BUTTON"
 }

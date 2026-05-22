@@ -66,14 +66,14 @@ struct GameConfiguration {
         latchDistance: 52,
         groundYPosition: -280,
         maximumDeltaTime: 1.0 / 30.0,
-        // MARK: Game Over Prototype
-        // Temporary score preview stays isolated here so the real distance
-        // counter can replace it without touching the game-over screen.
-        debugDistancePreviewEnabled: true,
-        debugDistancePreviewMetersPerSecond: 125,
+        // MARK: Distance Scoring
+        // Final distance counter speed used by the in-game HUD and the Game
+        // Over score result. 30 m/s is about 108 km/h, which reads much closer
+        // to a fast vehicle than the earlier placeholder rocket-speed value.
+        distanceMetersPerSecond: 30,
         // Jump forward distance is projected through the 60-degree road angle.
         // Keeping this compact stops missed jumps from gliding too far ahead.
-        jumpForwardDistance: 50,
+        jumpForwardDistance: 65,
         // Slower lane travel gives the player more readable time to latch.
         jumpForwardDuration: 0.85,
         playerFallSettleDuration: 0.18,
@@ -127,10 +127,13 @@ struct GameConfiguration {
     let groundYPosition: CGFloat
     let maximumDeltaTime: TimeInterval
 
+    // MARK: - Distance Scoring
+
+    /// Meters added every second while the run is actively playing.
+    let distanceMetersPerSecond: CGFloat
+
     // MARK: - Game Over Prototype
 
-    let debugDistancePreviewEnabled: Bool
-    let debugDistancePreviewMetersPerSecond: CGFloat
     let jumpForwardDistance: CGFloat
     let jumpForwardDuration: TimeInterval
     let playerFallSettleDuration: TimeInterval
