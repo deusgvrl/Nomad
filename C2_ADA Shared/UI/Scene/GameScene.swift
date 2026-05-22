@@ -51,6 +51,8 @@ final class GameScene: SKScene {
     var currentVehicleEntity: VehicleEntity?
     var gameOverScreen: GameOverScreen?
     private var lastUpdateTime: TimeInterval = 0
+    private var menuScreen: MenuScreen?
+    private var dimmedStartScreen: DimmedStartScreen?
     private var currentTimeScale: CGFloat = 1.0
     private var targetTimeScale: CGFloat = 1.0
 
@@ -138,8 +140,24 @@ final class GameScene: SKScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        guard gameState != .gameOver else { return }
+        let locationInScene = touch.location(in: self)
 
+        // MENU SCREEN INPUT
+        if let menuScreen {
+            menuScreen.handleTouch(at: locationInScene)
+            return
+        }
+        
+        // DIMMED SCREEN INPUT
+        if let dimmedStartScreen {
+            dimmedStartScreen.beginHold()
+            handle(
+                inputSystem.begin(
+                    at: touch.location(in: gameplayNode)
+                )
+            )
+            return
+        }
         handle(inputSystem.begin(at: touch.location(in: gameplayNode)))
     }
 
@@ -172,7 +190,7 @@ final class GameScene: SKScene {
 
 extension GameScene {
 
-    func setUpScene() {
+    func setUpScene(skipsMenu: Bool = false) {
         GameFontRegistry.registerGameFontsIfNeeded(configuration: configuration)
 
         removeAllChildren()
@@ -192,6 +210,13 @@ extension GameScene {
         playerState = .idle
         lastUpdateTime = 0
         distanceScoreSystem.resetRun()
+        inputSystem.reset()
+
+        if skipsMenu {
+            showDimmedStartScreen()
+        } else {
+            showMenuScreen()
+        }
     }
 }
 
@@ -746,5 +771,47 @@ final class DistanceScoreSystem {
             highScoreMeters: finalHighScore,
             isNewHighScore: isNewHighScore
         )
+    }
+}
+
+
+// MARK: - Menu Screen
+
+private extension GameScene {
+
+    // Menampilkan layar menu utama saat game dimulai
+    func showMenuScreen() {
+        let menu = MenuScreen(sceneSize: size)
+        menu.onStartTapped = { [weak self] in
+            guard let self else { return }
+            self.menuScreen = nil
+            self.showDimmedStartScreen()
+        }
+
+        menu.onSettingsTapped = {
+
+            print("Settings tapped")
+        }
+
+        menu.show(in: self)
+        self.menuScreen = menu
+    }
+}
+
+// MARK: - Dimmed Screen
+private extension GameScene {
+    func showDimmedStartScreen() {
+        let screen = DimmedStartScreen(
+            sceneSize: size
+        )
+
+        screen.onHoldStarted = { [weak self] in
+            guard let self else { return }
+            self.dimmedStartScreen = nil
+            self.gameState = .waitingToStart
+        }
+
+        screen.show(in: self)
+        self.dimmedStartScreen = screen
     }
 }
