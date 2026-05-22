@@ -7,24 +7,6 @@
 
 import SpriteKit
 
-enum VehicleType: String, CaseIterable{
-    case car = "CAR IDLE"
-
-    /// Returns a list of hitbox shapes for each vehicle type.
-    var hitboxShapes: [HitboxShape] {
-        switch self {
-        case .car:
-            return [
-                // 1. Bagian Depan (Hood)
-                HitboxShape(size: CGSize(width: 45, height: 65), offset: CGPoint(x: 5, y: 38), angle: -0.5),
-                // 2. Bagian Kabin/Belakang (Body)
-                HitboxShape(size: CGSize(width: 50, height: 40), offset: CGPoint(x: -15, y: 20), angle: -0.3)
-            ]
-        }
-    }
-}
-
-
 class VehicleNode: SKSpriteNode {
     let vehicleType: VehicleType
 
@@ -33,25 +15,19 @@ class VehicleNode: SKSpriteNode {
 
     init(type: VehicleType) {
         self.vehicleType = type
-        self.idleTexture = SKTexture(imageNamed: type.rawValue)
+        self.idleTexture = SKTexture(imageNamed: type.idleAssetName)
 
-        // Gunakan satu faktor skala agar proporsional
-        let scaleFactor: CGFloat = 2.3
-        // Hitung ukuran berdasarkan rasio asli gambar agar tidak "gepeng"
+        // Hitung ukuran berdasarkan rasio asli gambar & faktor skala tipe mobil
         let textureSize = idleTexture.size()
         let aspectRatio = textureSize.height / textureSize.width
-
-        // Tentukan lebar berdasarkan tile, lalu tinggi mengikuti rasio asli
-        let targetWidth = IsometricHelper.tileWidth * scaleFactor
+        let targetWidth = IsometricHelper.tileWidth * type.scaleFactor
         let targetHeight = targetWidth * aspectRatio
 
-        let vehicleSize = CGSize(width: targetWidth, height: targetHeight)
-
-        super.init(texture: idleTexture, color: .clear, size: vehicleSize)
+        super.init(texture: idleTexture, color: .clear, size: CGSize(width: targetWidth, height: targetHeight))
 
         self.name = "vehicle"
 
-        // Anchor point disesuaikan agar mobil "menempel" di atas tile
+        // Anchor point disesuaikan agar mobil "menempel" di atas tile (0.15 = dasar roda)
         self.anchorPoint = CGPoint(x: 0.5, y: 0.15)
     }
 
@@ -60,37 +36,29 @@ class VehicleNode: SKSpriteNode {
 
     /// Mengembalikan kendaraan ke kondisi Idle
     func resetToCalm() {
-        self.removeAllActions() // Hentikan animasi jika ada
+        self.removeAllActions()
         self.texture = idleTexture
     }
 
-    /// Menampilkan peringatan (Popping)
+    /// Menampilkan animasi peringatan (Popping)
     func playPoppingAnimation() {
         self.removeAllActions()
         
-        let noticeTextures = [
-            SKTexture(imageNamed: "notice1"),
-            SKTexture(imageNamed: "notice2"),
-            SKTexture(imageNamed: "notice3")
-        ]
+        let noticeTextures = vehicleType.noticeAssetNames.map { SKTexture(imageNamed: $0) }
         
-        // Animasi pergantian frame setiap 0.5 detik
-        let animateAction = SKAction.animate(with: noticeTextures, timePerFrame: 0.6)
+        // Durasi disesuaikan agar transisi halus sesuai jumlah frame
+        let timePerFrame = 0.6
+        let animateAction = SKAction.animate(with: noticeTextures, timePerFrame: timePerFrame)
     
         self.run(animateAction)
     }
 
-    /// Menjalankan animasi marah/memukul berulang-ulang
+    /// Menjalankan animasi marah (Hitting)
     func playHittingAnimation() {
         self.removeAllActions()
 
-        let rageTextures = [
-            SKTexture(imageNamed: "rage1"),
-            SKTexture(imageNamed: "rage2"),
-            SKTexture(imageNamed: "rage3")
-        ]
+        let rageTextures = vehicleType.rageAssetNames.map { SKTexture(imageNamed: $0) }
 
-        // Animasi pergantian frame setiap 0.1 detik
         let animateAction = SKAction.animate(with: rageTextures, timePerFrame: 0.1)
         let repeatAction = SKAction.repeatForever(animateAction)
 

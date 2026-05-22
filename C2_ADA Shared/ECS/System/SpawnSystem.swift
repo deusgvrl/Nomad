@@ -411,7 +411,8 @@ extension SpawnSystem {
     /// - Parameter rowNode: Row target spawn
     private func spawnVehicle(on rowNode: RowNode) {
         
-        let vehicle = VehicleNode(type: .car)
+        let randomType = VehicleType.allCases.randomElement() ?? .car
+        let vehicle = VehicleNode(type: randomType)
         
         vehicle.name = "vehicle"
         

@@ -49,7 +49,7 @@ struct GameConfiguration {
         // player is larger so the rider reads clearly on top of the vehicle.
         playerRideOffset: CGVector(dx: -12, dy: 6),
         vehicleSize: CGSize(width: 104, height: 104),
-        playerSize: CGSize(width: 52, height: 84),
+        playerSize: CGSize(width: 44, height: 76),
         obstacleSize: CGSize(width: 36, height: 92),
         // MARK: Game Typography
         // Primary typeface for major whole-game display text.

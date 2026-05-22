@@ -53,7 +53,7 @@ final class VehicleEntity: GKEntity {
     
     convenience init(configuration: GameConfiguration){
         
-        let vehicleNode = Self.makeVehicleNode(configuration: configuration)
+        let vehicleNode = Self.makeVehicleNode() // Defaults to .car
         vehicleNode.name = "vehicle"
         vehicleNode.zPosition = RenderLayer.vehicle
         vehicleNode.position = configuration.currentVehiclePosition
@@ -110,14 +110,8 @@ final class VehicleEntity: GKEntity {
     // MARK: - Vehicle Art
 
     /// Builds the current car sprite using the specialized VehicleNode class.
-    ///
-    /// PERBAIKAN: Sebelumnya ini menggunakan SKSpriteNode biasa dengan anchor point (0.5, 0.5).
-    /// Sekarang menggunakan VehicleNode agar anchor point (0.5, 0.15) dan pengaturan hitbox
-    /// konsisten antara mobil awal dan mobil yang di-spawn kemudian.
-    private static func makeVehicleNode(configuration: GameConfiguration) -> SKNode {
-        let vehicleNode = VehicleNode(type: .car)
-        // Ukuran diambil dari konfigurasi game agar tetap fleksibel
-        vehicleNode.size = configuration.vehicleSize
+    private static func makeVehicleNode(type: VehicleType = .car) -> SKNode {
+        let vehicleNode = VehicleNode(type: type)
         return vehicleNode
     }
 }

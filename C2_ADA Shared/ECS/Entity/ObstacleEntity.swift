@@ -18,7 +18,7 @@ class ObstacleEntity: GKEntity {
         super.init()
 
         addComponent(NodeComponent(node: node))
-        addComponent(HitboxComponent(size: type.hitboxSize, offset: type.hitboxOffset))
+        addComponent(HitboxComponent(shapes: type.hitboxShapes))
     }
 
     required init?(coder aDecoder: NSCoder) {
