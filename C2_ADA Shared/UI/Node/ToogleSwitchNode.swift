@@ -17,51 +17,21 @@ final class ToggleSwitchNode: SKNode {
 
     // MARK: - Nodes
 
-    private let backgroundNode: SKShapeNode
-    private let knobNode: SKShapeNode
+    private let spriteNode = SKSpriteNode()
 
     // MARK: - Init
 
     override init() {
-
-        // Background
-        backgroundNode = SKShapeNode(
-            rectOf: CGSize(width: 70, height: 36),
-            cornerRadius: 18
-        )
-
-        // Knob
-        knobNode = SKShapeNode(
-            circleOfRadius: 14
-        )
-
         super.init()
 
         isUserInteractionEnabled = true
-
-        setupNodes()
-        updateVisual(animated: false)
+        addChild(spriteNode)
+        
+        updateVisual()
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-}
-
-// MARK: - Setup
-
-private extension ToggleSwitchNode {
-
-    func setupNodes() {
-
-        backgroundNode.strokeColor = .clear
-
-        addChild(backgroundNode)
-
-        knobNode.fillColor = .white
-        knobNode.strokeColor = .clear
-
-        addChild(knobNode)
     }
 }
 
@@ -73,11 +43,8 @@ extension ToggleSwitchNode {
         _ touches: Set<UITouch>,
         with event: UIEvent?
     ) {
-
         isOn.toggle()
-
-        updateVisual(animated: true)
-
+        updateVisual()
         onToggleChanged?(isOn)
     }
 }
@@ -86,40 +53,13 @@ extension ToggleSwitchNode {
 
 private extension ToggleSwitchNode {
 
-    func updateVisual(animated: Bool) {
-
-        let backgroundColor: SKColor =
-        isOn ? .systemGreen : SKColor(red: 0.45, green: 0.35, blue: 0.25, alpha: 1.0)
-
-        let knobPositionX: CGFloat =
-        isOn ? 16 : -16
-
-        let updateBlock = {
-
-            self.backgroundNode.fillColor = backgroundColor
-
-            self.knobNode.position = CGPoint(
-                x: knobPositionX,
-                y: 0
-            )
-        }
-
-        if animated {
-
-            let move = SKAction.moveTo(
-                x: knobPositionX,
-                duration: 0.12
-            )
-
-            move.timingMode = .easeInEaseOut
-
-            backgroundNode.fillColor = backgroundColor
-
-            knobNode.run(move)
-
-        } else {
-
-            updateBlock()
-        }
+    func updateVisual() {
+        let textureName = isOn ? "On" : "Off"
+        let texture = SKTexture(imageNamed: textureName)
+        spriteNode.texture = texture
+        
+        // Pastikan ukuran node sama persis dengan ukuran gambar asset
+        // agar tidak memakan area sentuhan node lain di sekitarnya.
+        spriteNode.size = texture.size()
     }
 }

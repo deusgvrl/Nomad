@@ -102,7 +102,7 @@ private extension SettingsScreen {
 
         // Naikkan ke atas dan geser sedikit saja ke kiri
         settingsBlock.position = CGPoint(
-            x: -8,
+            x: -6,
             y: 50
         )
 
@@ -113,20 +113,16 @@ private extension SettingsScreen {
 
         closeButton.name = "closeSettings"
 
-        // Samakan lebar dengan settingsBlock (1.05 * sceneSize.width)
-        // SpriteNodeHelper.resize otomatis menjaga aspek rasio
+        // Perkecil button agar pas di dalam block
         SpriteNodeHelper.resize(
             node: closeButton,
-            width: sceneSize.width * 0.75
+            width: settingsBlock.size.width * 1
         )
-        closeButton.size.height *= 0.8
 
-        // Posisi di paling bawah layar. 
-        // Dihitung relatif terhadap contentNode agar tetap sejajar secara horizontal (x: 0)
-        // y: -sceneSize.height * 0.45 menempatkannya di dekat tepi bawah layar
+        // Letakkan di bagian bawah relatif terhadap contentNode
         closeButton.position = CGPoint(
-            x: 6,
-            y: -sceneSize.height * 0.43 - settingsBlock.position.y
+            x: 8,
+            y: -5
         )
 
         closeButton.zPosition = 10
@@ -141,10 +137,15 @@ private extension SettingsScreen {
         contentNode.zPosition = 5
 
         let labelColor = ColorHelper.fromHex(0x934f23)
+        // labelX & toggleX: (-) ke kiri, (+) ke kanan
         let labelX: CGFloat = -115
-        let toggleX: CGFloat = 85
-        let musicY: CGFloat = -15
-        let hapticsY: CGFloat = -75
+        let toggleX: CGFloat = 75
+
+        // musicY & hapticsY: (+) naik ke atas, (-) turun ke bawah
+        let musicY: CGFloat = 23
+        let hapticsY: CGFloat = -23        
+        // Skala pengecil untuk toggle (lebih kecil lagi)
+        let toggleScale: CGFloat = 0.50
 
         // MARK: Music Label
         musicLabel.text = "Music"
@@ -157,7 +158,8 @@ private extension SettingsScreen {
 
         // MARK: Music Toggle
         musicToggle.position = CGPoint(x: toggleX, y: musicY + 8)
-        musicToggle.zPosition = 1
+        musicToggle.zPosition = 20
+        musicToggle.setScale(toggleScale)
         contentNode.addChild(musicToggle)
 
         // MARK: Haptics Label
@@ -171,7 +173,8 @@ private extension SettingsScreen {
 
         // MARK: Haptics Toggle
         hapticsToggle.position = CGPoint(x: toggleX, y: hapticsY + 8)
-        hapticsToggle.zPosition = 1
+        hapticsToggle.zPosition = 20
+        hapticsToggle.setScale(toggleScale)
         contentNode.addChild(hapticsToggle)
     }
 
@@ -226,17 +229,59 @@ extension SettingsScreen {
 
     func handleTouch(at location: CGPoint) {
 
-        let tappedNode = atPoint(location)
+        // Konversi lokasi sentuhan ke koordinat contentNode
+        let pointInContent = convert(
+            location,
+            to: contentNode
+        )
 
-        switch tappedNode.name {
+        // MARK: - Manual Hitbox Close Button
+        // Diperkecil agar area transparan asset
+        // tidak ikut terdeteksi sebagai sentuhan.
 
-        case "closeSettings":
+        let hitboxWidth =
+        closeButton.size.width * 0.55
+
+        let hitboxHeight =
+        closeButton.size.height * 0.12
+
+        let hitboxRect = CGRect(
+            x: closeButton.position.x - hitboxWidth / 2 - 10,
+            y: closeButton.position.y - hitboxHeight / 2 - 100,
+            width: hitboxWidth,
+            height: hitboxHeight
+        )
+
+        // DEBUG HITBOX
+        // Uncomment jika ingin melihat area sentuh asli
+
+        /*
+        contentNode
+            .childNode(withName: "debugHitbox")?
+            .removeFromParent()
+
+        let debugNode = SKShapeNode(
+            rect: hitboxRect
+        )
+
+        debugNode.name = "debugHitbox"
+        debugNode.strokeColor = .red
+        debugNode.lineWidth = 2
+        debugNode.zPosition = 999
+
+        contentNode.addChild(debugNode)
+        */
+
+        // Deteksi hanya jika sentuhan
+        // benar-benar di area tombol
+
+        if hitboxRect.contains(pointInContent) {
 
             animateButton(closeButton)
-            self.hide()
 
-        default:
-            break
+            hide()
+
+            return
         }
     }
 }
