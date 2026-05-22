@@ -13,6 +13,7 @@ final class SettingsScreen: SKNode {
 
     var onMusicChanged: ((Bool) -> Void)?
     var onHapticsChanged: ((Bool) -> Void)?
+    var onClosed: (() -> Void)?
 
     // MARK: - Overlay Nodes
 
@@ -45,7 +46,7 @@ final class SettingsScreen: SKNode {
 
     // MARK: - Init
 
-    init(sceneSize: CGSize) {
+    init(sceneSize: CGSize, dimAlpha: CGFloat = 0.85) {
         super.init()
 
         name = "settingsScreen"
@@ -54,7 +55,7 @@ final class SettingsScreen: SKNode {
         alpha = 0
         isHidden = true
 
-        setupDim(sceneSize: sceneSize)
+        setupDim(sceneSize: sceneSize, alpha: dimAlpha)
         setupBlock(sceneSize: sceneSize)
 
         addChild(contentNode)
@@ -73,7 +74,7 @@ final class SettingsScreen: SKNode {
 
 private extension SettingsScreen {
 
-    func setupDim(sceneSize: CGSize) {
+    func setupDim(sceneSize: CGSize, alpha: CGFloat) {
 
         dimNode.path = CGPath(
             rect: CGRect(
@@ -87,7 +88,7 @@ private extension SettingsScreen {
 
         dimNode.fillColor = .black
         dimNode.strokeColor = .clear
-        dimNode.alpha = 0.85
+        dimNode.alpha = alpha
         dimNode.zPosition = -1
 
         addChild(dimNode)
@@ -126,6 +127,7 @@ private extension SettingsScreen {
         )
 
         closeButton.zPosition = 10
+        closeButton.setScale(1.0)
 
         contentNode.addChild(closeButton)
     }
@@ -201,6 +203,8 @@ extension SettingsScreen {
     func show(in scene: SKScene) {
 
         isHidden = false
+        closeButton.setScale(1.0)
+        closeButton.removeAllActions()
 
         if parent == nil {
             scene.addChild(self)
@@ -212,77 +216,60 @@ extension SettingsScreen {
     }
 
     func hide() {
-
         run(
             SKAction.sequence([
-
-                SKAction.fadeOut(
-                    withDuration: 0.2
-                ),
-
-                SKAction.run {
+                SKAction.fadeOut(withDuration: 0.2),
+                SKAction.run { 
                     self.isHidden = true
+                    self.removeFromParent()
                 }
             ])
         )
     }
 
-    func handleTouch(at location: CGPoint) {
+    func handleTouch(at location: CGPoint) -> Bool {
 
         // Konversi lokasi sentuhan ke koordinat contentNode
-        let pointInContent = convert(
-            location,
-            to: contentNode
-        )
+        let pointInContent = convert(location, to: contentNode)
 
         // MARK: - Manual Hitbox Close Button
-        // Diperkecil agar area transparan asset
-        // tidak ikut terdeteksi sebagai sentuhan.
 
-        let hitboxWidth =
-        closeButton.size.width * 0.55
-
-        let hitboxHeight =
-        closeButton.size.height * 0.12
+        let hitboxWidth = closeButton.size.width * 0.8
+        let hitboxHeight = closeButton.size.height * 0.6
 
         let hitboxRect = CGRect(
-            x: closeButton.position.x - hitboxWidth / 2 - 10,
-            y: closeButton.position.y - hitboxHeight / 2 - 100,
+            x: closeButton.position.x - hitboxWidth / 2,
+            y: closeButton.position.y - hitboxHeight / 2,
             width: hitboxWidth,
             height: hitboxHeight
         )
 
-        // DEBUG HITBOX
-        // Uncomment jika ingin melihat area sentuh asli
-
-        /*
-        contentNode
-            .childNode(withName: "debugHitbox")?
-            .removeFromParent()
-
-        let debugNode = SKShapeNode(
-            rect: hitboxRect
-        )
-
-        debugNode.name = "debugHitbox"
-        debugNode.strokeColor = .red
-        debugNode.lineWidth = 2
-        debugNode.zPosition = 999
-
-        contentNode.addChild(debugNode)
-        */
-
-        // Deteksi hanya jika sentuhan
-        // benar-benar di area tombol
-
+        // Deteksi sentuhan tepat di area tombol
         if hitboxRect.contains(pointInContent) {
 
-            animateButton(closeButton)
+            let scaleDown = SKAction.scale(to: 0.9, duration: 0.05)
+            let scaleUp = SKAction.scale(to: 1.0, duration: 0.05)
 
-            hide()
+            let close = SKAction.run { [weak self] in
+                guard let self else { return }
 
-            return
+                self.isHidden = true
+                self.removeFromParent()
+                self.onClosed?()
+            }
+
+            closeButton.run(
+                SKAction.sequence([
+                    scaleDown,
+                    scaleUp,
+                    close
+                ])
+            )
+
+            return true
         }
+
+        return false
     }
 }
 

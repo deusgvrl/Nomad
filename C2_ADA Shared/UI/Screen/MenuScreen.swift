@@ -133,7 +133,7 @@ extension MenuScreen {
             // semua touch diarahkan ke settings overlay
         if !settingsScreen.isHidden {
 
-            settingsScreen.handleTouch(at: location)
+            _ = settingsScreen.handleTouch(at: location)
             return
         }
         
