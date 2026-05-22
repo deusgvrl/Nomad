@@ -50,7 +50,7 @@ final class SettingsScreen: SKNode {
 
         name = "settingsScreen"
 
-        zPosition = 10000
+        zPosition = RenderLayer.settings
         alpha = 0
         isHidden = true
 
@@ -140,91 +140,39 @@ private extension SettingsScreen {
         contentNode.position = settingsBlock.position
         contentNode.zPosition = 5
 
-        let labelColor = SKColor(red: 0.38, green: 0.22, blue: 0.15, alpha: 1.0)
+        let labelColor = ColorHelper.fromHex(0x934f23)
         let labelX: CGFloat = -115
         let toggleX: CGFloat = 85
         let musicY: CGFloat = -15
         let hapticsY: CGFloat = -75
 
         // MARK: Music Label
-
-        let musicLabelNode = makeLabel(
-            text: "Music",
-            fontName: GameConfiguration.standard.secondaryFontName,
-            fontSize: 24,
-            color: labelColor
-        )
-        musicLabelNode.horizontalAlignmentMode = .left
-        musicLabelNode.position = CGPoint(x: labelX, y: musicY)
-        
-        // Copy properties to private node
-        musicLabel.text = musicLabelNode.text
-        musicLabel.fontName = musicLabelNode.fontName
-        musicLabel.fontSize = musicLabelNode.fontSize
-        musicLabel.fontColor = musicLabelNode.fontColor
-        musicLabel.horizontalAlignmentMode = musicLabelNode.horizontalAlignmentMode
-        musicLabel.position = musicLabelNode.position
+        musicLabel.text = "Music"
+        musicLabel.fontSize = 24
+        musicLabel.fontColor = labelColor
+        musicLabel.horizontalAlignmentMode = .left
+        musicLabel.position = CGPoint(x: labelX, y: musicY)
         musicLabel.zPosition = 1
-
         contentNode.addChild(musicLabel)
 
         // MARK: Music Toggle
-
-        musicToggle.position = CGPoint(
-            x: toggleX,
-            y: musicY + 8
-        )
+        musicToggle.position = CGPoint(x: toggleX, y: musicY + 8)
         musicToggle.zPosition = 1
-
         contentNode.addChild(musicToggle)
 
         // MARK: Haptics Label
-
-        let hapticsLabelNode = makeLabel(
-            text: "Haptics",
-            fontName: GameConfiguration.standard.secondaryFontName,
-            fontSize: 24,
-            color: labelColor
-        )
-        hapticsLabelNode.horizontalAlignmentMode = .left
-        hapticsLabelNode.position = CGPoint(x: labelX, y: hapticsY)
-
-        // Copy properties to private node
-        hapticsLabel.text = hapticsLabelNode.text
-        hapticsLabel.fontName = hapticsLabelNode.fontName
-        hapticsLabel.fontSize = hapticsLabelNode.fontSize
-        hapticsLabel.fontColor = hapticsLabelNode.fontColor
-        hapticsLabel.horizontalAlignmentMode = hapticsLabelNode.horizontalAlignmentMode
-        hapticsLabel.position = hapticsLabelNode.position
+        hapticsLabel.text = "Haptics"
+        hapticsLabel.fontSize = 24
+        hapticsLabel.fontColor = labelColor
+        hapticsLabel.horizontalAlignmentMode = .left
+        hapticsLabel.position = CGPoint(x: labelX, y: hapticsY)
         hapticsLabel.zPosition = 1
-
         contentNode.addChild(hapticsLabel)
 
         // MARK: Haptics Toggle
-
-        hapticsToggle.position = CGPoint(
-            x: toggleX,
-            y: hapticsY + 8
-        )
+        hapticsToggle.position = CGPoint(x: toggleX, y: hapticsY + 8)
         hapticsToggle.zPosition = 1
-
         contentNode.addChild(hapticsToggle)
-    }
-
-    func makeLabel(
-        text: String,
-        fontName: String,
-        fontSize: CGFloat,
-        color: SKColor
-    ) -> SKLabelNode {
-        let label = SKLabelNode(fontNamed: fontName)
-        label.text = text
-        label.fontSize = fontSize
-        label.fontColor = color
-        label.horizontalAlignmentMode = .center
-        label.verticalAlignmentMode = .center
-        label.zPosition = 2
-        return label
     }
 
     func setupCallbacks() {

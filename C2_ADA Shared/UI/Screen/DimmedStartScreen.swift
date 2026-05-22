@@ -25,7 +25,7 @@ final class DimmedStartScreen: SKNode {
     init(sceneSize: CGSize) {
         super.init()
         name = "dimmedStartScreen"
-        zPosition = 10000
+        zPosition = RenderLayer.dimmed
 
         setupDim(sceneSize: sceneSize)
         setupLabel()
@@ -54,54 +54,23 @@ private extension DimmedStartScreen {
         )
 
         dimNode.strokeColor = .clear
-        dimNode.fillColor = SKColor(
-            red: 40/255,
-            green: 18/255,
-            blue: 5/255,
-            alpha: 1.0
-        )
+        dimNode.fillColor = ColorHelper.fromHex(0x281205)
         dimNode.alpha = 0.925
         
         addChild(dimNode)
     }
 
     func setupLabel() {
-        // Menggunakan helper makeLabel dengan font primary dari registry
-        let label = makeLabel(
-            text: "HOLD TO START",
-            fontName: GameConfiguration.standard.primaryFontName,
-            fontSize: 45,
-            color: SKColor(red: 246/255, green: 167/255, blue: 76/255, alpha: 1.0)
-        )
-
-        label.position = CGPoint(x: 0, y: -40)
-
-        // Update referensi holdLabel
-        holdLabel.removeFromParent() // Hapus default jika ada
-        holdLabel.text = label.text
-        holdLabel.fontName = label.fontName
-        holdLabel.fontSize = label.fontSize
-        holdLabel.fontColor = label.fontColor
-        holdLabel.position = label.position
+        holdLabel.text = "HOLD TO START"
+        holdLabel.fontSize = 45
+        holdLabel.fontColor = ColorHelper.fromHex(0xF6A74C)
+        holdLabel.horizontalAlignmentMode = .center
+        holdLabel.verticalAlignmentMode = .center
+        holdLabel.position = CGPoint(x: 0, y: -40)
+        holdLabel.zPosition = 1
 
         addChild(holdLabel)
         animateLabel()
-    }
-
-    func makeLabel(
-        text: String,
-        fontName: String,
-        fontSize: CGFloat,
-        color: SKColor
-    ) -> SKLabelNode {
-        let label = SKLabelNode(fontNamed: fontName)
-        label.text = text
-        label.fontSize = fontSize
-        label.fontColor = color
-        label.horizontalAlignmentMode = .center
-        label.verticalAlignmentMode = .center
-        label.zPosition = 2
-        return label
     }
 
     func animateLabel() {

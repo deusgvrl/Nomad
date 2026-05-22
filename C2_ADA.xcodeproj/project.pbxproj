@@ -34,6 +34,7 @@
 				ECS/Entity/RowEntity.swift,
 				ECS/Entity/VehicleEntity.swift,
 				ECS/Entity/WallEntity.swift,
+				ECS/Helper/ColorHelper.swift,
 				ECS/Helper/EntityKind.swift,
 				ECS/Helper/GameConfiguration.swift,
 				ECS/Helper/GameFontRegistry.swift,

@@ -38,7 +38,7 @@ final class MenuScreen: SKNode {
 
         
         name = "menuScreen"
-        zPosition = 9999
+        zPosition = RenderLayer.menu
 
         setupBackground(sceneSize: sceneSize)
         setupLogo(sceneSize: sceneSize)
