@@ -204,7 +204,7 @@ final class GameScene: SKScene {
 extension GameScene {
 
     func setUpScene(skipsMenu: Bool = false, showsMenuImmediately: Bool = false) {
-        GameFontRegistry.registerGameFontsIfNeeded(configuration: configuration)
+//        GameFontRegistry.registerGameFontsIfNeeded(configuration: configuration)
 
         removeAllChildren()
         worldNode.removeAllChildren()
