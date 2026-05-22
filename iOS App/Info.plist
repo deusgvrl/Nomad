@@ -4,8 +4,8 @@
 <dict>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Fonts/GreatLakesNF.ttf</string>
-		<string>Fonts/Estandar-Regular.ttf</string>
+		<string>GreatLakesNF.ttf</string>
+		<string>Estandar-Regular.ttf</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

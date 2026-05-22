@@ -122,16 +122,24 @@ final class LatchSystem {
         let playerFrame = player.node.parent?.convert(player.node.calculateAccumulatedFrame(), to: scene) ?? .zero
         let vehicleFrame = vehicle.node.parent?.convert(vehicle.node.calculateAccumulatedFrame(), to: scene) ?? .zero
         
-        let isAhead = vehicleFrame.midY > playerFrame.midY
-        let isVisible = vehicleFrame.minY > -scene.size.height / 2
-        
-        let activeHitbox = vehicleFrame.insetBy(dx: -configuration.latchDistance, dy: -configuration.latchDistance)
+        let horizontalTolerance: CGFloat = configuration.latchDistance * 0.4
+        let verticalTolerance: CGFloat = configuration.latchDistance * 0.8
+
+
+        let activeHitbox = vehicleFrame.insetBy(
+            dx: -horizontalTolerance,
+            dy: -verticalTolerance)
         let intersects = playerFrame.intersects(activeHitbox)
-        
-        let isValid = intersects && isAhead && isVisible
         
         let dx = vehicleFrame.midX - playerFrame.midX
         let dy = vehicleFrame.midY - playerFrame.midY
+        
+        let isOverlappingBody = abs(dx) < (vehicleFrame.width / 2)
+        
+        let isAhead = vehicleFrame.midY > playerFrame.midY
+        let isVisible = vehicleFrame.minY > -scene.size.height / 2
+        
+        let isValid = intersects && isOverlappingBody && isAhead && isVisible
         let distance = hypot(dx, dy)
         return (isValid, distance)
         
