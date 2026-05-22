@@ -52,7 +52,7 @@ extension ToggleSwitchNode {
         sendsCallback: Bool = false
     ) {
         self.isOn = isOn
-        updateVisual(animated: animated)
+        updateVisual()
 
         if sendsCallback {
             onToggleChanged?(isOn)

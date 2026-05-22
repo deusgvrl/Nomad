@@ -55,36 +55,6 @@ final class PauseScreen: SKNode {
         fatalError("init(coder:) has not been implemented")
     }
 
-    // MARK: - Presentation
-
-    /// Fades the pause overlay in after `GameScene` adds it to the scene.
-    func present() {
-        run(SKAction.fadeIn(withDuration: 0.12))
-    }
-
-    /// Fades the overlay out before `GameScene` removes it.
-    func dismiss(completion: @escaping () -> Void) {
-        run(SKAction.fadeOut(withDuration: 0.10), completion: completion)
-    }
-
-    // MARK: - Touch Handling
-
-    /// Handles placeholder pause UI touches and reports whether they were used.
-    func handleTouch(at location: CGPoint) -> Bool {
-        // MARK: Screen-Space Touch Conversion
-        // GameScene sends scene coordinates. Convert them into this overlay's
-        // local space before testing button frames.
-        let screenLocation = parent?.convert(location, to: self) ?? location
-
-        if isTouch(screenLocation, inside: resumeButtonNode, xInset: -16, yInset: -12) {
-            hapticsController.playLightButtonTap()
-            onResume?()
-            return true
-        }
-
-        return false
-    }
-
     /// Uses accumulated frames so the whole grouped button remains tappable.
     private func isTouch(
         _ location: CGPoint,
