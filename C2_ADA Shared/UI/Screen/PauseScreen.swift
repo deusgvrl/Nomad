@@ -28,15 +28,23 @@ final class PauseScreen: SKNode {
 
     private let configuration: GameConfiguration
 
+    /// Shared haptics wrapper used by the Resume button.
+    private let hapticsController: HapticsController
+
     // MARK: - Touch Targets
 
     private var resumeButtonNode: SKNode?
 
     // MARK: - Initialization
 
-    init(configuration: GameConfiguration, resumeGameState: GameState) {
+    init(
+        configuration: GameConfiguration,
+        resumeGameState: GameState,
+        hapticsController: HapticsController = .shared
+    ) {
         self.configuration = configuration
         self.resumeGameState = resumeGameState
+        self.hapticsController = hapticsController
         super.init()
 
         name = "pauseOverlay"
@@ -72,6 +80,7 @@ final class PauseScreen: SKNode {
         let screenLocation = parent?.convert(location, to: self) ?? location
 
         if isTouch(screenLocation, inside: resumeButtonNode, xInset: -16, yInset: -12) {
+            hapticsController.playLightButtonTap()
             onResume?()
             return true
         }

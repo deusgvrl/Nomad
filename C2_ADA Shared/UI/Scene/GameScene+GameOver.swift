@@ -32,7 +32,13 @@ extension GameScene {
         gameState = .gameOver
         playerState = playerEndState
 
+        // MARK: Game Over Haptics Stop
+        // Game Over freezes gameplay and overlays buttons, so any active rage
+        // pulse must end before the result screen appears.
+        hapticsController.stopRagePulse()
+
         if let currentVehicleEntity {
+            currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.stopRageHaptics()
             movementSystem.endSteering(vehicle: currentVehicleEntity)
         }
 
@@ -132,7 +138,8 @@ private extension GameScene {
 
         let screen = GameOverScreen(
             scoreResult: scoreResult,
-            configuration: configuration
+            configuration: configuration,
+            hapticsController: hapticsController
         )
 
         // MARK: Try Again Callback

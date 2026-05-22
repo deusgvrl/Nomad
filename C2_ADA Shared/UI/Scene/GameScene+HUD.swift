@@ -69,6 +69,7 @@ extension GameScene {
             return false
         }
 
+        hapticsController.playLightButtonTap()
         enterPause()
         return true
     }
@@ -171,6 +172,12 @@ private extension GameScene {
     /// Freezes gameplay and presents the replaceable pause overlay.
     func enterPause() {
         let resumeState = gameState
+
+        // MARK: Pause Haptics Stop
+        // Gameplay updates are frozen while paused, so stop the rage pulse here
+        // instead of leaving the last active rage rhythm alive.
+        hapticsController.stopRagePulse()
+
         gameState = .paused
         setGameplayNodesPaused(true)
         showPauseScreen(resumeState: resumeState)
@@ -205,7 +212,8 @@ private extension GameScene {
 
         let screen = PauseScreen(
             configuration: configuration,
-            resumeGameState: resumeState
+            resumeGameState: resumeState,
+            hapticsController: hapticsController
         )
         screen.onResume = { [weak self, weak screen] in
             self?.resumeGameFromPause(using: screen)

@@ -38,6 +38,7 @@
 				ECS/Helper/GameConfiguration.swift,
 				ECS/Helper/GameFontRegistry.swift,
 				ECS/Helper/GameplayRule.swift,
+				ECS/Helper/HapticsController.swift,
 				ECS/Helper/InputPhase.swift,
 				ECS/Helper/IsometricHelper.swift,
 				ECS/Helper/NomadAsset.swift,
