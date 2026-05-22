@@ -51,7 +51,6 @@ final class GameScene: SKScene {
     var currentVehicleEntity: VehicleEntity?
     var gameOverScreen: GameOverScreen?
     var lastUpdateTime: TimeInterval = 0
-    private var lastUpdateTime: TimeInterval = 0
     private var menuScreen: MenuScreen?
     private var dimmedStartScreen: DimmedStartScreen?
     private var currentTimeScale: CGFloat = 1.0
@@ -149,7 +148,7 @@ final class GameScene: SKScene {
 
         // MENU SCREEN INPUT
         if let menuScreen {
-            menuScreen.handleTouch(at: locationInScene)
+            menuScreen.handleTouch(at: sceneLocation)
             return
         }
         
@@ -204,7 +203,7 @@ final class GameScene: SKScene {
 
 extension GameScene {
 
-    func setUpScene(skipsMenu: Bool = false) {
+    func setUpScene(skipsMenu: Bool = false, showsMenuImmediately: Bool = false) {
         GameFontRegistry.registerGameFontsIfNeeded(configuration: configuration)
 
         removeAllChildren()
@@ -232,7 +231,7 @@ extension GameScene {
         if skipsMenu {
             showDimmedStartScreen()
         } else {
-            showMenuScreen()
+            showMenuScreen(animated: !showsMenuImmediately)
         }
     }
 }
@@ -790,7 +789,7 @@ final class DistanceScoreSystem {
 private extension GameScene {
 
     // Menampilkan layar menu utama saat game dimulai
-    func showMenuScreen() {
+    func showMenuScreen(animated: Bool = true) {
         let menu = MenuScreen(sceneSize: size)
         menu.onStartTapped = { [weak self] in
             guard let self else { return }
@@ -803,7 +802,7 @@ private extension GameScene {
             print("Settings tapped")
         }
 
-        menu.show(in: self)
+        menu.show(in: self, animated: animated)
         self.menuScreen = menu
     }
 }
