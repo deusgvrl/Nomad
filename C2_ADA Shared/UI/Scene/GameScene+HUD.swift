@@ -221,7 +221,27 @@ private extension GameScene {
             hapticsController: hapticsController
         )
         screen.onResume = { [weak self, weak screen] in
-            self?.resumeGameFromPause(using: screen)
+            guard let self = self else { return }
+            
+            // 1. Hilangkan Pause Screen
+            screen?.dismiss { [weak self, weak screen] in
+                screen?.removeFromParent()
+                guard let self = self else { return }
+                
+                // 2. Munculkan Countdown
+                let countdown = CountdownNode(
+                    configuration: self.configuration,
+                    sceneSize: self.size,
+                    haptics: self.hapticsController
+                )
+                countdown.zPosition = RenderLayer.gameOverOverlay // Di atas segalanya
+                self.addChild(countdown)
+                
+                countdown.start { [weak self] in
+                    // 3. Resume game sesungguhnya setelah countdown selesai
+                    self?.resumeGameFromPause(using: nil)
+                }
+            }
         }
         
         screen.onSettingsTapped = { [weak self] in

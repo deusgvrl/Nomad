@@ -62,6 +62,7 @@
 				State/StateMachine.swift,
 				State/VehicleRageState.swift,
 				State/VehicleState.swift,
+				UI/Node/CountdownNode.swift,
 				UI/Node/FloorNode.swift,
 				UI/Node/ObstacleNode.swift,
 				UI/Node/RowNode.swift,

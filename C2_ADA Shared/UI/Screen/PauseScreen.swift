@@ -159,6 +159,7 @@ extension PauseScreen {
         if isPointInHitbox(pointInBlock, node: resumeButton, widthMult: 0.8, heightMult: 0.6) {
             animateButton(resumeButton)
             onResume?()
+            hapticsController.playLightButtonTap()
             return true
         }
 
@@ -166,6 +167,7 @@ extension PauseScreen {
         if isPointInHitbox(pointInBlock, node: settingsButton, widthMult: 0.8, heightMult: 0.6) {
             animateButton(settingsButton)
             onSettingsTapped?()
+            hapticsController.playLightButtonTap()
             return true
         }
 
@@ -173,6 +175,7 @@ extension PauseScreen {
         if isPointInHitbox(pointInBlock, node: homeButton, widthMult: 0.8, heightMult: 0.6) {
             animateButton(homeButton)
             onHomeTapped?()
+            hapticsController.playLightButtonTap()
             return true
         }
 
@@ -194,13 +197,7 @@ extension PauseScreen {
     }
 
     private func animateButton(_ node: SKNode) {
-        let press = SKAction.scale(to: 0.95, duration: 0.05)
-        let release = SKAction.scale(to: 1.0, duration: 0.05)
-        node.run(SKAction.sequence([press, release]))
-    }
-
-    private func animateLabel(_ node: SKLabelNode) {
-        let press = SKAction.scale(to: 0.9, duration: 0.05)
+        let press = SKAction.scale(to: 0.92, duration: 0.05)
         let release = SKAction.scale(to: 1.0, duration: 0.05)
         node.run(SKAction.sequence([press, release]))
     }

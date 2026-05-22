@@ -259,47 +259,47 @@ extension SettingsScreen {
     }
 
     func handleTouch(at location: CGPoint) -> Bool {
-
         // Konversi lokasi sentuhan ke koordinat contentNode
         let pointInContent = convert(location, to: contentNode)
 
         // MARK: - Manual Hitbox Close Button
-
-        let hitboxWidth = closeButton.size.width * 0.8
-        let hitboxHeight = closeButton.size.height * 0.6
+        // Sesuaikan nilai ini (0.0 - 1.0) untuk mempersempit area sentuh.
+        let hitboxWidth = closeButton.size.width * 0.55
+        let hitboxHeight = closeButton.size.height * 0.125
 
         let hitboxRect = CGRect(
-            x: closeButton.position.x - hitboxWidth / 2,
-            y: closeButton.position.y - hitboxHeight / 2,
+            x: closeButton.position.x - hitboxWidth / 2 - 15,
+            y: closeButton.position.y - hitboxHeight / 2 - 100,
             width: hitboxWidth,
             height: hitboxHeight
         )
 
+        // MARK: - Debug Hitbox
+        /*
+        contentNode.childNode(withName: "debugHitbox")?.removeFromParent()
+        let debugNode = SKShapeNode(rect: hitboxRect)
+        debugNode.name = "debugHitbox"
+        debugNode.strokeColor = .red
+        debugNode.lineWidth = 2
+        debugNode.zPosition = 999
+        contentNode.addChild(debugNode)
+        */
+         
+    
         // Deteksi sentuhan tepat di area tombol
         if hitboxRect.contains(pointInContent) {
-
-            let scaleDown = SKAction.scale(to: 0.9, duration: 0.05)
+            
+            // Animasi tekan sebelum menutup
+            let scaleDown = SKAction.scale(to: 0.92, duration: 0.05)
             let scaleUp = SKAction.scale(to: 1.0, duration: 0.05)
-
             let close = SKAction.run { [weak self] in
-                guard let self else { return }
-            hapticsController.playLightButtonTap()
-            animateButton(closeButton)
-            self.hide()
-
-                self.isHidden = true
-                self.removeFromParent()
+                guard let self = self else { return }
+                self.hide() 
                 self.onClosed?()
+                hapticsController.playLightButtonTap()
             }
 
-            closeButton.run(
-                SKAction.sequence([
-                    scaleDown,
-                    scaleUp,
-                    close
-                ])
-            )
-
+            closeButton.run(SKAction.sequence([scaleDown, scaleUp, close]))
             return true
         }
 

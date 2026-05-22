@@ -156,17 +156,17 @@ final class GameScene: SKScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
+        
+        // Blokir semua input jika countdown sedang berjalan
+        if childNode(withName: "resumeCountdownNode") != nil {
+            return
+        }
+        
         let sceneLocation = touch.location(in: self)
 
-        // 1. DIMMED SCREEN INPUT (Prioritas Tertinggi)
-        // Jika masih dalam layar "Hold to Start", blokir input lain termasuk Pause
-        if let dimmedStartScreen {
-            dimmedStartScreen.beginHold()
-            handle(
-                inputSystem.begin(
-                    at: touch.location(in: gameplayNode)
-                )
-            )
+        // 1. GAME OVER STATE INPUT
+        if gameState == .gameOver {
+            handleGameOverTouch(at: sceneLocation)
             return
         }
 
@@ -180,12 +180,22 @@ final class GameScene: SKScene {
             return
         }
 
-        // 3. PAUSE BUTTON (Hanya bisa ditekan saat bermain)
+        // 3. DIMMED SCREEN INPUT
+        // Jika masih dalam layar "Hold to Start", blokir input lain termasuk Pause
+        if let dimmedStartScreen {
+            dimmedStartScreen.beginHold()
+            handle(
+                inputSystem.begin(
+                    at: touch.location(in: gameplayNode)
+                )
+            )
+            return
+        }
+
+        // 4. PAUSE BUTTON (Hanya bisa ditekan saat bermain)
         if handlePauseButtonTouch(at: sceneLocation) { return }
         
-        guard gameState != .gameOver else { return }
-
-        // 4. MENU SCREEN INPUT
+        // 5. MENU SCREEN INPUT
         if let menuScreen {
             menuScreen.handleTouch(at: sceneLocation)
             return
@@ -196,6 +206,7 @@ final class GameScene: SKScene {
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
+        // Blokir input gerakan/hold jika sedang pause atau game over
         guard gameState != .gameOver,
               gameState != .paused else { return }
 
@@ -204,15 +215,14 @@ final class GameScene: SKScene {
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        let sceneLocation = touch.location(in: self)
 
-        if gameState == .paused {
-            handlePauseTouch(at: sceneLocation)
+        // Blokir input akhir/release jika sedang pause atau game over
+        // Kecuali untuk interaksi UI tertentu jika diperlukan
+        if gameState == .gameOver {
             return
         }
 
-        if gameState == .gameOver {
-            handleGameOverTouch(at: sceneLocation)
+        if gameState == .paused {
             return
         }
 
