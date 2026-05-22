@@ -30,11 +30,25 @@ class VehiclePoppingState: GKState {
         
         // Menjalankan animasi peringatan pada node
         node?.playPoppingAnimation()
+
+        // MARK: Popping Haptic Start
+        // Popping is the first rage warning, so it starts with a soft pulse.
+        // The pulse gets stronger during `update(deltaTime:)` as elapsed time
+        // moves toward the Hitting transition.
+        component?.updateRageHaptics(phase: .popping, progress: 0)
     }
     
     override func update(deltaTime seconds: TimeInterval) {
         super.update(deltaTime: seconds)
         elapsedTime += seconds
+
+        // MARK: Popping Haptic Ramp
+        // The haptic controller maps this 0...1 progress to slightly stronger
+        // and faster pulses, keeping Popping readable but still lighter than
+        // Hitting.
+        let progress = min(elapsedTime / duration, 1)
+        component?.updateRageHaptics(phase: .popping, progress: progress)
+
         if elapsedTime >= duration {
             // Enter Hitting State if Duration exceeds the required time.
             self.stateMachine?.enter(VehicleHittingState.self)
@@ -70,11 +84,24 @@ class VehicleHittingState: GKState {
         
         // Menjalankan animasi memukul/marah pada node
         node?.playHittingAnimation()
+
+        // MARK: Hitting Haptic Start
+        // Hitting is the dangerous rage phase, so it starts harder than
+        // Popping. The update loop continues ramping the pulse until Jump.
+        component?.updateRageHaptics(phase: .hitting, progress: 0)
     }
     
     override func update(deltaTime seconds: TimeInterval) {
         super.update(deltaTime: seconds)
         elapsedTime += seconds
+
+        // MARK: Hitting Haptic Ramp
+        // Hitting uses the same normalized progress shape as Popping, but the
+        // controller gives it a stronger intensity range and faster rhythm so
+        // players can feel the rage peak.
+        let progress = min(elapsedTime / duration, 1)
+        component?.updateRageHaptics(phase: .hitting, progress: progress)
+
         if elapsedTime >= duration {
             // Enter Hitting State if Duration exceeds the required time.
             self.stateMachine?.enter(VehicleJumpState.self)
@@ -106,6 +133,11 @@ class VehicleJumpState: GKState {
         
         // TODO: - ADD JUMPING SYSTEM HERE.
         
+        // MARK: Jump Haptic Stop
+        // Jump ends the rage warning loop. Stop pulse tracking before asking
+        // GameScene to detach the player so no rage haptic leaks into the jump.
+        component?.stopRageHaptics()
+
         // Memanggil sinyal lompat paksa ke GameScene melalui komponen
         component?.onJumpRequested?()
     }
@@ -146,6 +178,11 @@ class VehicleCalmState: GKState {
         
         // Mengembalikan node ke kondisi visual tenang (Idle)
         node?.resetToCalm()
+
+        // MARK: Calm Haptic Stop
+        // Calm state intentionally has no haptic output. Entering Calm also
+        // clears any pulse timing from the previous vehicle rage cycle.
+        component?.stopRageHaptics()
     }
     
     // Function to start the timer

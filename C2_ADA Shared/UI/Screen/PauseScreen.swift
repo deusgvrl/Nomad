@@ -20,7 +20,10 @@ final class PauseScreen: SKNode {
     let resumeGameState: GameState
     private let configuration: GameConfiguration
 
-    // MARK: - UI Nodes
+    /// Shared haptics wrapper used by the Resume button.
+    private let hapticsController: HapticsController
+
+    // MARK: - Touch Targets
 
     private let dimNode = SKShapeNode()
     private let pauseBlock = SKSpriteNode(imageNamed: "PAUSED BLOCK")
@@ -30,9 +33,14 @@ final class PauseScreen: SKNode {
 
     // MARK: - Init
 
-    init(configuration: GameConfiguration, resumeGameState: GameState) {
+    init(
+        configuration: GameConfiguration,
+        resumeGameState: GameState,
+        hapticsController: HapticsController = .shared
+    ) {
         self.configuration = configuration
         self.resumeGameState = resumeGameState
+        self.hapticsController = hapticsController
         super.init()
 
         name = "pauseOverlay"
@@ -45,6 +53,50 @@ final class PauseScreen: SKNode {
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Presentation
+
+    /// Fades the pause overlay in after `GameScene` adds it to the scene.
+    func present() {
+        run(SKAction.fadeIn(withDuration: 0.12))
+    }
+
+    /// Fades the overlay out before `GameScene` removes it.
+    func dismiss(completion: @escaping () -> Void) {
+        run(SKAction.fadeOut(withDuration: 0.10), completion: completion)
+    }
+
+    // MARK: - Touch Handling
+
+    /// Handles placeholder pause UI touches and reports whether they were used.
+    func handleTouch(at location: CGPoint) -> Bool {
+        // MARK: Screen-Space Touch Conversion
+        // GameScene sends scene coordinates. Convert them into this overlay's
+        // local space before testing button frames.
+        let screenLocation = parent?.convert(location, to: self) ?? location
+
+        if isTouch(screenLocation, inside: resumeButtonNode, xInset: -16, yInset: -12) {
+            hapticsController.playLightButtonTap()
+            onResume?()
+            return true
+        }
+
+        return false
+    }
+
+    /// Uses accumulated frames so the whole grouped button remains tappable.
+    private func isTouch(
+        _ location: CGPoint,
+        inside node: SKNode?,
+        xInset: CGFloat,
+        yInset: CGFloat
+    ) -> Bool {
+        guard let node else { return false }
+
+        return node.calculateAccumulatedFrame()
+            .insetBy(dx: xInset, dy: yInset)
+            .contains(location)
     }
 }
 

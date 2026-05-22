@@ -39,6 +39,26 @@ final class ToggleSwitchNode: SKNode {
 
 extension ToggleSwitchNode {
 
+    // MARK: - State Sync
+
+    /// Updates the switch without requiring a touch event.
+    ///
+    /// Settings uses this to mirror saved preferences when the screen is built.
+    /// The callback is optional so loading stored state does not accidentally
+    /// re-save the same value or trigger sound/haptic side effects.
+    func setIsOn(
+        _ isOn: Bool,
+        animated: Bool = false,
+        sendsCallback: Bool = false
+    ) {
+        self.isOn = isOn
+        updateVisual(animated: animated)
+
+        if sendsCallback {
+            onToggleChanged?(isOn)
+        }
+    }
+
     override func touchesEnded(
         _ touches: Set<UITouch>,
         with event: UIEvent?

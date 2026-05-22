@@ -17,9 +17,19 @@ class VehicleRageComponent: GKComponent {
     
     /// Mesin status yang mengontrol logika kemarahan
     var stateMachine: GKStateMachine?
+
+    // MARK: - Haptics
+
+    /// Central controller for all rage haptics.
+    ///
+    /// The state machine owns the timing of Calm, Popping, Hitting, and Jump.
+    /// This component only forwards those state updates into the shared haptics
+    /// controller so CoreHaptics stays isolated from state classes.
+    private let hapticsController: HapticsController
     
     /// Inisialisasi komponen dengan referensi ke node visual kendaraan
-    init(node: VehicleNode) {
+    init(node: VehicleNode, hapticsController: HapticsController = .shared) {
+        self.hapticsController = hapticsController
         super.init()
         
         // Membuat instance dari setiap status dan memasukkan node serta komponen ini
@@ -54,6 +64,26 @@ class VehicleRageComponent: GKComponent {
     
     /// Menghentikan siklus kemarahan dan kembali ke kondisi tenang
     func resetRageCycle() {
+        stopRageHaptics()
         stateMachine?.enter(VehicleCalmState.self)
+    }
+
+    // MARK: - Rage Haptics
+
+    /// Updates the active CoreHaptics pulse for the current rage phase.
+    ///
+    /// `progress` comes from each state's elapsed time. The controller converts
+    /// it into stronger and faster pulse feedback as rage increases.
+    func updateRageHaptics(phase: RageHapticPhase, progress: Double) {
+        hapticsController.startOrUpdateRagePulse(
+            phase: phase,
+            progress: progress
+        )
+    }
+
+    /// Stops rage haptics whenever the vehicle becomes calm, jumps, or leaves
+    /// the active gameplay flow.
+    func stopRageHaptics() {
+        hapticsController.stopRagePulse()
     }
 }

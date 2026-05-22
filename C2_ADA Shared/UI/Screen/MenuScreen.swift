@@ -14,6 +14,11 @@ final class MenuScreen: SKNode {
     var onStartTapped: (() -> Void)?
     var onSettingsTapped: (() -> Void)?
 
+    // MARK: - Dependencies
+
+    /// Shared haptics wrapper for menu buttons and the nested Settings screen.
+    private let hapticsController: HapticsController
+
     // MARK: - UI Nodes
 
     private let backgroundNode =
@@ -32,8 +37,15 @@ final class MenuScreen: SKNode {
 
     // MARK: - Initialization
 
-    init(sceneSize: CGSize) {
-        settingsScreen = SettingsScreen(sceneSize: sceneSize)
+    init(
+        sceneSize: CGSize,
+        hapticsController: HapticsController = .shared
+    ) {
+        self.hapticsController = hapticsController
+        settingsScreen = SettingsScreen(
+            sceneSize: sceneSize,
+            hapticsController: hapticsController
+        )
         super.init()
 
         
@@ -144,6 +156,7 @@ extension MenuScreen {
 
         switch tappedNode.name {
         case "startButton":
+            hapticsController.playLightButtonTap()
             animateButton(startButton)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.hide()
@@ -152,6 +165,7 @@ extension MenuScreen {
 
         case "settingsButton":
 
+            hapticsController.playLightButtonTap()
             animateButton(settingsButton)
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {

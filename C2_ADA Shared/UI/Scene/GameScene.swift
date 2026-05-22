@@ -35,6 +35,7 @@ final class GameScene: SKScene {
     private let launchSystem: LaunchSystem?
     private let latchSystem: LatchSystem?
     let distanceScoreSystem = DistanceScoreSystem()
+    let hapticsController: HapticsController
     private let collisionSystem = CollisionSystem()
 
     // MARK: - World Container
@@ -80,11 +81,16 @@ final class GameScene: SKScene {
 
     // MARK: - Initialization
 
-    init(size: CGSize, configuration: GameConfiguration = .standard) {
+    init(
+        size: CGSize,
+        configuration: GameConfiguration = .standard,
+        hapticsController: HapticsController = .shared
+    ) {
         self.configuration = configuration
         self.movementSystem = MovementSystem()
         self.launchSystem = LaunchSystem(configuration: configuration)
         self.latchSystem = LatchSystem(configuration: configuration)
+        self.hapticsController = hapticsController
         super.init(size: size)
         anchorPoint = CGPoint(x: 0.5, y: 0.5)
     }
@@ -94,6 +100,7 @@ final class GameScene: SKScene {
         self.movementSystem = MovementSystem()
         self.launchSystem = LaunchSystem(configuration: .standard)
         self.latchSystem = LatchSystem(configuration: .standard)
+        self.hapticsController = .shared
         super.init(coder: aDecoder)
         anchorPoint = CGPoint(x: 0.5, y: 0.5)
     }
@@ -101,6 +108,7 @@ final class GameScene: SKScene {
     // MARK: - SpriteKit Lifecycle
 
     override func didMove(to view: SKView) {
+        hapticsController.prepare()
         setUpScene()
     }
 
@@ -226,6 +234,12 @@ extension GameScene {
 
     func setUpScene(skipsMenu: Bool = false, showsMenuImmediately: Bool = false) {
 //        GameFontRegistry.registerGameFontsIfNeeded(configuration: configuration)
+
+        // MARK: Haptics Reset
+        // Rebuilding the scene happens after retry, home, and first launch.
+        // Stop any previous rage pulse before the new vehicle cycle starts.
+        hapticsController.stopRagePulse()
+        hapticsController.prepare()
 
         removeAllChildren()
         worldNode.removeAllChildren()
@@ -473,6 +487,7 @@ extension GameScene {
 
     /// Restores normal scene timing before the Game Over overlay is presented.
     func resetGameOverTiming() {
+        hapticsController.stopRagePulse()
         targetTimeScale = 1.0
         currentTimeScale = 1.0
         speed = 1.0
@@ -580,6 +595,12 @@ private extension GameScene {
     func forcePlayerToJump() {
         guard let currentVehicleEntity, let playerEntity, playerState == .riding else { return }
         
+        // MARK: Rage Haptics Stop On Jump
+        // Manual release and forced rage jumps both pass through this method.
+        // Stop the pulse immediately instead of waiting for the delayed visual
+        // reset so the haptic warning ends when the player leaves the vehicle.
+        currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.stopRageHaptics()
+
         movementSystem.endSteering(vehicle: currentVehicleEntity)
         
         // Menambahkan delay sebelum kendaraan kembali ke kondisi Idle agar efek marahnya masih terlihat sejenak
@@ -811,7 +832,10 @@ private extension GameScene {
 
     // Menampilkan layar menu utama saat game dimulai
     func showMenuScreen(animated: Bool = true) {
-        let menu = MenuScreen(sceneSize: size)
+        let menu = MenuScreen(
+            sceneSize: size,
+            hapticsController: hapticsController
+        )
         menu.onStartTapped = { [weak self] in
             guard let self else { return }
             self.menuScreen = nil
