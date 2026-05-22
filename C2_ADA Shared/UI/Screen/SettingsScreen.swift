@@ -14,6 +14,14 @@ final class SettingsScreen: SKNode {
     var onMusicChanged: ((Bool) -> Void)?
     var onHapticsChanged: ((Bool) -> Void)?
 
+    // MARK: - Dependencies
+
+    /// Shared haptics wrapper used for settings buttons and toggle state.
+    ///
+    /// Settings owns the Haptics toggle, so it also mirrors the saved haptics
+    /// preference and forwards changes back into the controller.
+    private let hapticsController: HapticsController
+
     // MARK: - Overlay Nodes
 
     private let dimNode = SKShapeNode()
@@ -45,7 +53,11 @@ final class SettingsScreen: SKNode {
 
     // MARK: - Init
 
-    init(sceneSize: CGSize) {
+    init(
+        sceneSize: CGSize,
+        hapticsController: HapticsController = .shared
+    ) {
+        self.hapticsController = hapticsController
         super.init()
 
         name = "settingsScreen"
@@ -61,6 +73,7 @@ final class SettingsScreen: SKNode {
 
         setupCloseButton(sceneSize: sceneSize)
         setupContent()
+        syncStoredPreferences()
         setupCallbacks()
     }
 
@@ -232,14 +245,32 @@ private extension SettingsScreen {
         musicToggle.onToggleChanged = {
             [weak self] isOn in
 
+            self?.hapticsController.playLightButtonTap()
             self?.onMusicChanged?(isOn)
         }
 
         hapticsToggle.onToggleChanged = {
             [weak self] isOn in
 
+            // MARK: Haptics Toggle Feedback
+            // Play the tap before applying the new value. That lets the player
+            // feel the "turn off" tap while haptics are still enabled, and the
+            // controller will no-op if haptics were already disabled.
+            self?.hapticsController.playLightButtonTap()
+            self?.hapticsController.setHapticsEnabled(isOn)
             self?.onHapticsChanged?(isOn)
         }
+    }
+
+    // MARK: - Stored Preferences
+
+    /// Mirrors persisted settings into the visible toggles without firing their
+    /// callbacks during setup.
+    func syncStoredPreferences() {
+        hapticsToggle.setIsOn(
+            hapticsController.isHapticsEnabled,
+            animated: false
+        )
     }
 }
 
@@ -284,6 +315,7 @@ extension SettingsScreen {
 
         case "closeSettings":
 
+            hapticsController.playLightButtonTap()
             animateButton(closeButton)
             self.hide()
 

@@ -30,6 +30,9 @@ final class GameOverScreen: SKNode {
     private let configuration: GameConfiguration
     private let scoreResult: ScoreResult
 
+    /// Shared haptics wrapper used by Game Over actions.
+    private let hapticsController: HapticsController
+
     // MARK: - Touch Targets
 
     private var retryButtonNode: SKNode?
@@ -39,9 +42,14 @@ final class GameOverScreen: SKNode {
 
     /// Builds the overlay immediately so GameScene can add and fade it in as
     /// one complete screen node.
-    init(scoreResult: ScoreResult, configuration: GameConfiguration) {
+    init(
+        scoreResult: ScoreResult,
+        configuration: GameConfiguration,
+        hapticsController: HapticsController = .shared
+    ) {
         self.scoreResult = scoreResult
         self.configuration = configuration
+        self.hapticsController = hapticsController
         super.init()
 
         name = "gameOverOverlay"
@@ -75,11 +83,13 @@ final class GameOverScreen: SKNode {
         // Home sits close to the Try Again asset. Check it first so taps on the
         // underlined text do not accidentally hit the larger Try Again frame.
         if isTouch(screenLocation, inside: homeButtonNode, xInset: -16, yInset: -10) {
+            hapticsController.playLightButtonTap()
             onHome?()
             return true
         }
 
         if isTouch(screenLocation, inside: retryButtonNode, xInset: -18, yInset: -10) {
+            hapticsController.playLightButtonTap()
             onTryAgain?()
             return true
         }
