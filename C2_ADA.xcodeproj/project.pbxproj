@@ -58,7 +58,9 @@
 				UI/Node/WallNode.swift,
 				UI/Scene/GameScene.swift,
 				"UI/Scene/GameScene+GameOver.swift",
+				"UI/Scene/GameScene+HUD.swift",
 				UI/Screen/GameOverScreen.swift,
+				UI/Screen/PauseScreen.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
 		};

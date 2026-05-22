@@ -235,6 +235,17 @@ extension SpawnSystem {
         moveWall(deltaTime: deltaTime)
         recycleWalls()
     }
+
+    // MARK: - Frame Timing Reset
+
+    /// Clears the system's internal frame clock after gameplay has been paused.
+    ///
+    /// `GameScene` stops calling `update(_:)` while the pause overlay is open.
+    /// Without this reset, the first resumed frame would compare the new time
+    /// against the old pre-pause time and move the whole world too far.
+    func resetFrameTiming() {
+        lastUpdateTime = 0
+    }
 }
 
 // MARK: - Row Movement
