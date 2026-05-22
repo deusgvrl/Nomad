@@ -168,10 +168,14 @@ extension MenuScreen {
         }
     }
 
-    func show(in scene: SKScene) {
-        alpha = 0
+    func show(in scene: SKScene, animated: Bool = true) {
+        // MARK: Menu Presentation
+        // Home returns from Game Over should appear immediately so the rebuilt
+        // gameplay scene does not flash behind the fading menu.
+        alpha = animated ? 0 : 1
         scene.addChild(self)
-        
+
+        guard animated else { return }
         run(
             SKAction.fadeIn(withDuration: 0.25)
         )

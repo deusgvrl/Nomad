@@ -38,10 +38,10 @@ final class GameScene: SKScene {
     /// player and vehicle live in `gameplayNode`. Keeping them separate lets us
     /// merge dev's treadmill setup without shifting the movement prototype's
     /// start position.
-    private let worldNode = SKNode()
+    let worldNode = SKNode()
     private let targetReticleNode = SKShapeNode()
-    private let gameplayNode = SKNode()
-    private var spawnSystem: SpawnSystem?
+    let gameplayNode = SKNode()
+    var spawnSystem: SpawnSystem?
 
     // MARK: - Runtime State
 
@@ -50,7 +50,7 @@ final class GameScene: SKScene {
     var playerEntity: PlayerEntity?
     var currentVehicleEntity: VehicleEntity?
     var gameOverScreen: GameOverScreen?
-    private var lastUpdateTime: TimeInterval = 0
+    var lastUpdateTime: TimeInterval = 0
     private var menuScreen: MenuScreen?
     private var dimmedStartScreen: DimmedStartScreen?
     private var currentTimeScale: CGFloat = 1.0
@@ -140,11 +140,15 @@ final class GameScene: SKScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        let locationInScene = touch.location(in: self)
+        let sceneLocation = touch.location(in: self)
+
+        if handlePauseButtonTouch(at: sceneLocation) { return }
+        guard gameState != .gameOver,
+              gameState != .paused else { return }
 
         // MENU SCREEN INPUT
         if let menuScreen {
-            menuScreen.handleTouch(at: locationInScene)
+            menuScreen.handleTouch(at: sceneLocation)
             return
         }
         
@@ -163,15 +167,23 @@ final class GameScene: SKScene {
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        guard gameState != .gameOver else { return }
+        guard gameState != .gameOver,
+              gameState != .paused else { return }
 
         handle(inputSystem.move(to: touch.location(in: gameplayNode)))
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
+        let sceneLocation = touch.location(in: self)
+
+        if gameState == .paused {
+            handlePauseTouch(at: sceneLocation)
+            return
+        }
+
         if gameState == .gameOver {
-            handleGameOverTouch(at: touch.location(in: self))
+            handleGameOverTouch(at: sceneLocation)
             return
         }
 
@@ -180,7 +192,8 @@ final class GameScene: SKScene {
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        guard gameState != .gameOver else { return }
+        guard gameState != .gameOver,
+              gameState != .paused else { return }
 
         handle(inputSystem.end(at: touch.location(in: gameplayNode)))
     }
@@ -209,13 +222,16 @@ extension GameScene {
         gameState = .waitingToStart
         playerState = .idle
         lastUpdateTime = 0
+        worldNode.isPaused = false
+        gameplayNode.isPaused = false
         distanceScoreSystem.resetRun()
+        setUpHUD()
         inputSystem.reset()
 
         if skipsMenu {
             showDimmedStartScreen()
         } else {
-            showMenuScreen()
+            showMenuScreen(animated: !showsMenuImmediately)
         }
     }
 }
@@ -370,22 +386,6 @@ private extension GameScene {
         print("Collision with another vehicle!")
         enterGameOver(playerEndState: .crashed)
         return true
-    }
-
-    // MARK: - Distance Score Preview
-
-    func updateDistanceScore(_ deltaTime: TimeInterval) {
-        guard configuration.debugDistancePreviewEnabled,
-              gameState == .playing else {
-            return
-        }
-
-        // Temporary preview only: the real distance counter can replace this
-        // one call without changing the highscore or game-over overlay logic.
-        distanceScoreSystem.updatePreview(
-            deltaTime: deltaTime,
-            metersPerSecond: configuration.debugDistancePreviewMetersPerSecond
-        )
     }
 
     // MARK: - Jumping Player
@@ -707,8 +707,10 @@ struct ScoreResult {
 
 // MARK: - Distance Score System
 
-/// Stores score and highscore separately from the temporary preview updater.
-/// The real distance counter can set meters directly without changing overlay UI.
+/// Stores the live distance score and the saved high score.
+///
+/// `GameScene` owns when the run is active, while this object owns the simple
+/// score math and the `UserDefaults` persistence used by the Game Over screen.
 final class DistanceScoreSystem {
 
     // MARK: - Storage Keys
@@ -724,7 +726,7 @@ final class DistanceScoreSystem {
     // MARK: - Runtime State
 
     private(set) var currentDistanceMeters: Int = 0
-    private var previewDistanceMeters: CGFloat = 0
+    private var distanceMetersAccumulator: CGFloat = 0
 
     // MARK: - Initialization
 
@@ -734,29 +736,36 @@ final class DistanceScoreSystem {
 
     // MARK: - Run Lifecycle
 
+    /// Clears only the current run score; the stored high score remains saved.
     func resetRun() {
         currentDistanceMeters = 0
-        previewDistanceMeters = 0
+        distanceMetersAccumulator = 0
     }
 
-    // MARK: - Distance Preview
+    // MARK: - Distance Update
 
-    func updatePreview(deltaTime: TimeInterval, metersPerSecond: CGFloat) {
+    /// Adds distance for one active gameplay frame.
+    ///
+    /// The accumulator keeps fractional meters between frames so the displayed
+    /// integer score increases smoothly without losing tiny per-frame values.
+    func updateDistance(deltaTime: TimeInterval, metersPerSecond: CGFloat) {
         guard deltaTime > 0 else { return }
 
-        previewDistanceMeters += CGFloat(deltaTime) * metersPerSecond
-        currentDistanceMeters = max(0, Int(previewDistanceMeters.rounded(.down)))
+        distanceMetersAccumulator += CGFloat(deltaTime) * metersPerSecond
+        currentDistanceMeters = max(0, Int(distanceMetersAccumulator.rounded(.down)))
     }
 
     // MARK: - Distance Input
 
+    /// Lets future systems set distance directly without touching HUD or storage.
     func setDistanceMeters(_ meters: Int) {
         currentDistanceMeters = max(0, meters)
-        previewDistanceMeters = CGFloat(currentDistanceMeters)
+        distanceMetersAccumulator = CGFloat(currentDistanceMeters)
     }
 
     // MARK: - Result
 
+    /// Compares the finished run with the saved high score and persists wins.
     func finishRun() -> ScoreResult {
         let previousHighScore = userDefaults.integer(forKey: StorageKey.highScoreMeters)
         let isNewHighScore = currentDistanceMeters > previousHighScore
@@ -780,7 +789,7 @@ final class DistanceScoreSystem {
 private extension GameScene {
 
     // Menampilkan layar menu utama saat game dimulai
-    func showMenuScreen() {
+    func showMenuScreen(animated: Bool = true) {
         let menu = MenuScreen(sceneSize: size)
         menu.onStartTapped = { [weak self] in
             guard let self else { return }
@@ -793,7 +802,7 @@ private extension GameScene {
             print("Settings tapped")
         }
 
-        menu.show(in: self)
+        menu.show(in: self, animated: animated)
         self.menuScreen = menu
     }
 }

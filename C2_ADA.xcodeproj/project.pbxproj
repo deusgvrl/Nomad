@@ -68,9 +68,11 @@
 				UI/Node/WallNode.swift,
 				UI/Scene/GameScene.swift,
 				"UI/Scene/GameScene+GameOver.swift",
+				"UI/Scene/GameScene+HUD.swift",
 				UI/Screen/DimmedStartScreen.swift,
 				UI/Screen/GameOverScreen.swift,
 				UI/Screen/MenuScreen.swift,
+				UI/Screen/PauseScreen.swift,
 				UI/Screen/SettingsScreen.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
@@ -203,7 +205,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = L7P29889GM;
+				DEVELOPMENT_TEAM = M7YC437JCH;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -237,7 +239,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = L7P29889GM;
+				DEVELOPMENT_TEAM = M7YC437JCH;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

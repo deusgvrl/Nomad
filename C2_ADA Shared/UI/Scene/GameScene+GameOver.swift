@@ -142,10 +142,10 @@ private extension GameScene {
         }
 
         // MARK: Home Callback
-        // The Home screen flow does not exist yet, so this remains intentionally
-        // parked until the menu/home navigation is implemented.
-        screen.onHome = {
-            // FIXME: Navigate to the Home Menu once the Home Menu screen exists.
+        // Home rebuilds the scene and presents `MenuScreen` immediately so the
+        // gameplay scene does not briefly flash between overlays.
+        screen.onHome = { [weak self] in
+            self?.setUpScene(showsMenuImmediately: true)
         }
 
         gameOverScreen = screen
