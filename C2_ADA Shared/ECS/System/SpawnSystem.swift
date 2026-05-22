@@ -213,19 +213,9 @@ extension SpawnSystem {
     /// Dipanggil setiap frame dari GameScene
     ///
     /// - Parameter currentTime: Waktu frame saat ini
-    func update(_ currentTime: TimeInterval) {
+    func update(deltaTime: TimeInterval) {
 
-        let deltaTime: TimeInterval
-        
-        /// Frame pertama tidak memiliki deltaTime
-        if lastUpdateTime == 0 {
-            deltaTime = 0
-        } else {
-            deltaTime = currentTime - lastUpdateTime
-        }
-        
-        /// Simpan waktu frame sekarang
-        lastUpdateTime = currentTime
+
         
         /// Update movement dan recycle row
         moveRows(deltaTime: deltaTime)

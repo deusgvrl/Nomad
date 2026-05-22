@@ -138,7 +138,7 @@ private extension GameScene {
         // MARK: Try Again Callback
         // Retry resets the full scene and clears this overlay through setup.
         screen.onTryAgain = { [weak self] in
-            self?.setUpScene()
+            self?.setUpScene(skipsMenu: true)
         }
 
         // MARK: Home Callback

@@ -51,6 +51,9 @@ final class GameScene: SKScene {
     var currentVehicleEntity: VehicleEntity?
     var gameOverScreen: GameOverScreen?
     var lastUpdateTime: TimeInterval = 0
+    private var lastUpdateTime: TimeInterval = 0
+    private var menuScreen: MenuScreen?
+    private var dimmedStartScreen: DimmedStartScreen?
     private var currentTimeScale: CGFloat = 1.0
     private var targetTimeScale: CGFloat = 1.0
 
@@ -101,7 +104,7 @@ final class GameScene: SKScene {
         let deltaTime = makeDeltaTime(from: currentTime)
         guard gameState == .playing else { return }
 
-        spawnSystem?.update(currentTime)
+        spawnSystem?.update(deltaTime: deltaTime)
         updateJumpingPlayer(deltaTime)
         updateDistanceScore(deltaTime)
         
@@ -109,16 +112,18 @@ final class GameScene: SKScene {
             if playerState == .riding {
                 movementSystem.updateLerp(vehicle: vehicle, deltaTime: deltaTime)
                 player.place(on: vehicle)
-                
-                // Update komponen kemarahan kendaraan setiap frame
-                vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: deltaTime)
             }
 
+            // MARK: Riding Collision Game Over
+            // CollisionSystem checks the active vehicle's hitboxes while the
+            // player is riding. A collision now flows through the real game-over
+            // entry instead of only flipping state.
+            if updateCollisionGameOverIfNeeded(for: vehicle) { return }
+            
+            // Update rage State
+            vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: deltaTime)
         }
-        
-//        if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
-//            player.place(on: vehicle)
-//        }
+
         
         if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
             player.place(on: vehicle)
@@ -142,6 +147,22 @@ final class GameScene: SKScene {
         guard gameState != .gameOver,
               gameState != .paused else { return }
 
+        // MENU SCREEN INPUT
+        if let menuScreen {
+            menuScreen.handleTouch(at: locationInScene)
+            return
+        }
+        
+        // DIMMED SCREEN INPUT
+        if let dimmedStartScreen {
+            dimmedStartScreen.beginHold()
+            handle(
+                inputSystem.begin(
+                    at: touch.location(in: gameplayNode)
+                )
+            )
+            return
+        }
         handle(inputSystem.begin(at: touch.location(in: gameplayNode)))
     }
 
@@ -183,7 +204,7 @@ final class GameScene: SKScene {
 
 extension GameScene {
 
-    func setUpScene() {
+    func setUpScene(skipsMenu: Bool = false) {
         GameFontRegistry.registerGameFontsIfNeeded(configuration: configuration)
 
         removeAllChildren()
@@ -206,6 +227,13 @@ extension GameScene {
         gameplayNode.isPaused = false
         distanceScoreSystem.resetRun()
         setUpHUD()
+        inputSystem.reset()
+
+        if skipsMenu {
+            showDimmedStartScreen()
+        } else {
+            showMenuScreen()
+        }
     }
 }
 
@@ -232,13 +260,18 @@ private extension GameScene {
         gameplayNode.zPosition = RenderLayer.vehicle
         addChild(gameplayNode)
         
-        let ringDiameter = configuration.latchDistance * 2
-        let path = CGPath(ellipseIn: CGRect(x: -ringDiameter/2, y: -ringDiameter/2, width: ringDiameter, height: ringDiameter), transform: nil)
-        targetReticleNode.path = path
+//        let ringDiameter = configuration.latchDistance * 2
+//        let path = CGPath(ellipseIn: CGRect(x: -ringDiameter/2, y: -ringDiameter/2, width: ringDiameter, height: ringDiameter), transform: nil)
+//        targetReticleNode.path = path
+        let ringRadius = configuration.latchDistance
+        targetReticleNode.path = CGPath(ellipseIn: CGRect(x: -ringRadius, y: -ringRadius, width: ringRadius*2, height: ringRadius*2), transform: nil)
+        targetReticleNode.zPosition = -1
         targetReticleNode.strokeColor = SKColor(red: 1.00, green: 0.86, blue: 0.24, alpha: 1.0)
         targetReticleNode.lineWidth = 4
         targetReticleNode.alpha = 0
-        targetReticleNode.zPosition = RenderLayer.overlay
+        
+        targetReticleNode.xScale = 1.0
+        targetReticleNode.yScale = 1.0
         worldNode.addChild(targetReticleNode)
     }
 
@@ -373,7 +406,7 @@ private extension GameScene {
             
             if let target = bestTarget {
                 targetTimeScale = 0.6
-                targetReticleNode.position = target.node.position
+                targetReticleNode.position = CGPoint(x: target.node.position.x, y: target.node.position.y + 40)
                 
                 if targetReticleNode.alpha == 0 {
                     targetReticleNode.run(SKAction.fadeAlpha(to: 1.0, duration: 0.15))
@@ -748,5 +781,47 @@ final class DistanceScoreSystem {
             highScoreMeters: finalHighScore,
             isNewHighScore: isNewHighScore
         )
+    }
+}
+
+
+// MARK: - Menu Screen
+
+private extension GameScene {
+
+    // Menampilkan layar menu utama saat game dimulai
+    func showMenuScreen() {
+        let menu = MenuScreen(sceneSize: size)
+        menu.onStartTapped = { [weak self] in
+            guard let self else { return }
+            self.menuScreen = nil
+            self.showDimmedStartScreen()
+        }
+
+        menu.onSettingsTapped = {
+
+            print("Settings tapped")
+        }
+
+        menu.show(in: self)
+        self.menuScreen = menu
+    }
+}
+
+// MARK: - Dimmed Screen
+private extension GameScene {
+    func showDimmedStartScreen() {
+        let screen = DimmedStartScreen(
+            sceneSize: size
+        )
+
+        screen.onHoldStarted = { [weak self] in
+            guard let self else { return }
+            self.dimmedStartScreen = nil
+            self.gameState = .waitingToStart
+        }
+
+        screen.show(in: self)
+        self.dimmedStartScreen = screen
     }
 }
