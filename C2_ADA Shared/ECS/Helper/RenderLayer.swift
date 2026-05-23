@@ -27,8 +27,11 @@ enum RenderLayer {
 
     // MARK: - UI Layers
 
-    static let overlay: CGFloat = 100
+    static let overlay: CGFloat = 160
     static let hud: CGFloat = 180
-    static let pauseOverlay: CGFloat = 190
-    static let gameOverOverlay: CGFloat = 200
+    static let dimmed: CGFloat = 300
+    static let menu: CGFloat = 310
+    static let pause: CGFloat = 320
+    static let settings: CGFloat = 330
+    static let gameOverOverlay: CGFloat = 400
 }

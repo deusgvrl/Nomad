@@ -13,6 +13,7 @@ final class SettingsScreen: SKNode {
 
     var onMusicChanged: ((Bool) -> Void)?
     var onHapticsChanged: ((Bool) -> Void)?
+    var onClosed: (() -> Void)?
 
     // MARK: - Dependencies
 
@@ -55,18 +56,18 @@ final class SettingsScreen: SKNode {
 
     init(
         sceneSize: CGSize,
-        hapticsController: HapticsController = .shared
+        hapticsController: HapticsController = .shared, dimAlpha: CGFloat = 0.85
     ) {
         self.hapticsController = hapticsController
         super.init()
 
         name = "settingsScreen"
 
-        zPosition = 10000
+        zPosition = RenderLayer.settings
         alpha = 0
         isHidden = true
 
-        setupDim(sceneSize: sceneSize)
+        setupDim(sceneSize: sceneSize, alpha: dimAlpha)
         setupBlock(sceneSize: sceneSize)
 
         addChild(contentNode)
@@ -86,7 +87,7 @@ final class SettingsScreen: SKNode {
 
 private extension SettingsScreen {
 
-    func setupDim(sceneSize: CGSize) {
+    func setupDim(sceneSize: CGSize, alpha: CGFloat) {
 
         dimNode.path = CGPath(
             rect: CGRect(
@@ -100,7 +101,7 @@ private extension SettingsScreen {
 
         dimNode.fillColor = .black
         dimNode.strokeColor = .clear
-        dimNode.alpha = 0.85
+        dimNode.alpha = alpha
         dimNode.zPosition = -1
 
         addChild(dimNode)
@@ -115,7 +116,7 @@ private extension SettingsScreen {
 
         // Naikkan ke atas dan geser sedikit saja ke kiri
         settingsBlock.position = CGPoint(
-            x: -8,
+            x: -6,
             y: 50
         )
 
@@ -126,23 +127,20 @@ private extension SettingsScreen {
 
         closeButton.name = "closeSettings"
 
-        // Samakan lebar dengan settingsBlock (1.05 * sceneSize.width)
-        // SpriteNodeHelper.resize otomatis menjaga aspek rasio
+        // Perkecil button agar pas di dalam block
         SpriteNodeHelper.resize(
             node: closeButton,
-            width: sceneSize.width * 0.75
+            width: settingsBlock.size.width * 1
         )
-        closeButton.size.height *= 0.8
 
-        // Posisi di paling bawah layar. 
-        // Dihitung relatif terhadap contentNode agar tetap sejajar secara horizontal (x: 0)
-        // y: -sceneSize.height * 0.45 menempatkannya di dekat tepi bawah layar
+        // Letakkan di bagian bawah relatif terhadap contentNode
         closeButton.position = CGPoint(
-            x: 6,
-            y: -sceneSize.height * 0.43 - settingsBlock.position.y
+            x: 8,
+            y: -5
         )
 
         closeButton.zPosition = 10
+        closeButton.setScale(1.0)
 
         contentNode.addChild(closeButton)
     }
@@ -153,91 +151,46 @@ private extension SettingsScreen {
         contentNode.position = settingsBlock.position
         contentNode.zPosition = 5
 
-        let labelColor = SKColor(red: 0.38, green: 0.22, blue: 0.15, alpha: 1.0)
+        let labelColor = ColorHelper.fromHex(0x934f23)
+        // labelX & toggleX: (-) ke kiri, (+) ke kanan
         let labelX: CGFloat = -115
-        let toggleX: CGFloat = 85
-        let musicY: CGFloat = -15
-        let hapticsY: CGFloat = -75
+        let toggleX: CGFloat = 75
+
+        // musicY & hapticsY: (+) naik ke atas, (-) turun ke bawah
+        let musicY: CGFloat = 23
+        let hapticsY: CGFloat = -23        
+        // Skala pengecil untuk toggle (lebih kecil lagi)
+        let toggleScale: CGFloat = 0.50
 
         // MARK: Music Label
-
-        let musicLabelNode = makeLabel(
-            text: "Music",
-            fontName: GameConfiguration.standard.secondaryFontName,
-            fontSize: 24,
-            color: labelColor
-        )
-        musicLabelNode.horizontalAlignmentMode = .left
-        musicLabelNode.position = CGPoint(x: labelX, y: musicY)
-        
-        // Copy properties to private node
-        musicLabel.text = musicLabelNode.text
-        musicLabel.fontName = musicLabelNode.fontName
-        musicLabel.fontSize = musicLabelNode.fontSize
-        musicLabel.fontColor = musicLabelNode.fontColor
-        musicLabel.horizontalAlignmentMode = musicLabelNode.horizontalAlignmentMode
-        musicLabel.position = musicLabelNode.position
+        musicLabel.text = "Music"
+        musicLabel.fontSize = 24
+        musicLabel.fontColor = labelColor
+        musicLabel.horizontalAlignmentMode = .left
+        musicLabel.position = CGPoint(x: labelX, y: musicY)
         musicLabel.zPosition = 1
-
         contentNode.addChild(musicLabel)
 
         // MARK: Music Toggle
-
-        musicToggle.position = CGPoint(
-            x: toggleX,
-            y: musicY + 8
-        )
-        musicToggle.zPosition = 1
-
+        musicToggle.position = CGPoint(x: toggleX, y: musicY + 8)
+        musicToggle.zPosition = 20
+        musicToggle.setScale(toggleScale)
         contentNode.addChild(musicToggle)
 
         // MARK: Haptics Label
-
-        let hapticsLabelNode = makeLabel(
-            text: "Haptics",
-            fontName: GameConfiguration.standard.secondaryFontName,
-            fontSize: 24,
-            color: labelColor
-        )
-        hapticsLabelNode.horizontalAlignmentMode = .left
-        hapticsLabelNode.position = CGPoint(x: labelX, y: hapticsY)
-
-        // Copy properties to private node
-        hapticsLabel.text = hapticsLabelNode.text
-        hapticsLabel.fontName = hapticsLabelNode.fontName
-        hapticsLabel.fontSize = hapticsLabelNode.fontSize
-        hapticsLabel.fontColor = hapticsLabelNode.fontColor
-        hapticsLabel.horizontalAlignmentMode = hapticsLabelNode.horizontalAlignmentMode
-        hapticsLabel.position = hapticsLabelNode.position
+        hapticsLabel.text = "Haptics"
+        hapticsLabel.fontSize = 24
+        hapticsLabel.fontColor = labelColor
+        hapticsLabel.horizontalAlignmentMode = .left
+        hapticsLabel.position = CGPoint(x: labelX, y: hapticsY)
         hapticsLabel.zPosition = 1
-
         contentNode.addChild(hapticsLabel)
 
         // MARK: Haptics Toggle
-
-        hapticsToggle.position = CGPoint(
-            x: toggleX,
-            y: hapticsY + 8
-        )
-        hapticsToggle.zPosition = 1
-
+        hapticsToggle.position = CGPoint(x: toggleX, y: hapticsY + 8)
+        hapticsToggle.zPosition = 20
+        hapticsToggle.setScale(toggleScale)
         contentNode.addChild(hapticsToggle)
-    }
-
-    func makeLabel(
-        text: String,
-        fontName: String,
-        fontSize: CGFloat,
-        color: SKColor
-    ) -> SKLabelNode {
-        let label = SKLabelNode(fontNamed: fontName)
-        label.text = text
-        label.fontSize = fontSize
-        label.fontColor = color
-        label.horizontalAlignmentMode = .center
-        label.verticalAlignmentMode = .center
-        label.zPosition = 2
-        return label
     }
 
     func setupCallbacks() {
@@ -281,6 +234,8 @@ extension SettingsScreen {
     func show(in scene: SKScene) {
 
         isHidden = false
+        closeButton.setScale(1.0)
+        closeButton.removeAllActions()
 
         if parent == nil {
             scene.addChild(self)
@@ -292,36 +247,63 @@ extension SettingsScreen {
     }
 
     func hide() {
-
         run(
             SKAction.sequence([
-
-                SKAction.fadeOut(
-                    withDuration: 0.2
-                ),
-
-                SKAction.run {
+                SKAction.fadeOut(withDuration: 0.2),
+                SKAction.run { 
                     self.isHidden = true
+                    self.removeFromParent()
                 }
             ])
         )
     }
 
-    func handleTouch(at location: CGPoint) {
+    func handleTouch(at location: CGPoint) -> Bool {
+        // Konversi lokasi sentuhan ke koordinat contentNode
+        let pointInContent = convert(location, to: contentNode)
 
-        let tappedNode = atPoint(location)
+        // MARK: - Manual Hitbox Close Button
+        // Sesuaikan nilai ini (0.0 - 1.0) untuk mempersempit area sentuh.
+        let hitboxWidth = closeButton.size.width * 0.55
+        let hitboxHeight = closeButton.size.height * 0.125
 
-        switch tappedNode.name {
+        let hitboxRect = CGRect(
+            x: closeButton.position.x - hitboxWidth / 2 - 15,
+            y: closeButton.position.y - hitboxHeight / 2 - 100,
+            width: hitboxWidth,
+            height: hitboxHeight
+        )
 
-        case "closeSettings":
+        // MARK: - Debug Hitbox
+        /*
+        contentNode.childNode(withName: "debugHitbox")?.removeFromParent()
+        let debugNode = SKShapeNode(rect: hitboxRect)
+        debugNode.name = "debugHitbox"
+        debugNode.strokeColor = .red
+        debugNode.lineWidth = 2
+        debugNode.zPosition = 999
+        contentNode.addChild(debugNode)
+        */
+         
+    
+        // Deteksi sentuhan tepat di area tombol
+        if hitboxRect.contains(pointInContent) {
+            
+            // Animasi tekan sebelum menutup
+            let scaleDown = SKAction.scale(to: 0.92, duration: 0.05)
+            let scaleUp = SKAction.scale(to: 1.0, duration: 0.05)
+            let close = SKAction.run { [weak self] in
+                guard let self = self else { return }
+                self.hide() 
+                self.onClosed?()
+                hapticsController.playLightButtonTap()
+            }
 
-            hapticsController.playLightButtonTap()
-            animateButton(closeButton)
-            self.hide()
-
-        default:
-            break
+            closeButton.run(SKAction.sequence([scaleDown, scaleUp, close]))
+            return true
         }
+
+        return false
     }
 }
 

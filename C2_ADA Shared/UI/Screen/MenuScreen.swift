@@ -50,7 +50,7 @@ final class MenuScreen: SKNode {
 
         
         name = "menuScreen"
-        zPosition = 9999
+        zPosition = RenderLayer.menu
 
         setupBackground(sceneSize: sceneSize)
         setupLogo(sceneSize: sceneSize)
@@ -145,7 +145,7 @@ extension MenuScreen {
             // semua touch diarahkan ke settings overlay
         if !settingsScreen.isHidden {
 
-            settingsScreen.handleTouch(at: location)
+            _ = settingsScreen.handleTouch(at: location)
             return
         }
         

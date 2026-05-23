@@ -76,6 +76,11 @@ extension GameScene {
 
     /// Sends scene-space touches to the pause overlay while gameplay is paused.
     func handlePauseTouch(at location: CGPoint) {
+
+        if childNode(withName: "settingsScreen") != nil {
+            return
+        }
+
         _ = pauseScreen?.handleTouch(at: location)
     }
 }
@@ -216,7 +221,49 @@ private extension GameScene {
             hapticsController: hapticsController
         )
         screen.onResume = { [weak self, weak screen] in
-            self?.resumeGameFromPause(using: screen)
+            guard let self = self else { return }
+            
+            // 1. Hilangkan Pause Screen
+            screen?.dismiss { [weak self, weak screen] in
+                screen?.removeFromParent()
+                guard let self = self else { return }
+                
+                // 2. Munculkan Countdown
+                let countdown = CountdownNode(
+                    configuration: self.configuration,
+                    sceneSize: self.size,
+                    haptics: self.hapticsController
+                )
+                countdown.zPosition = RenderLayer.gameOverOverlay // Di atas segalanya
+                self.addChild(countdown)
+                
+                countdown.start { [weak self] in
+                    // 3. Resume game sesungguhnya setelah countdown selesai
+                    self?.resumeGameFromPause(using: nil)
+                }
+            }
+        }
+        
+        screen.onSettingsTapped = { [weak self] in
+            guard let self else { return }
+
+            self.activeSettingsSource = .pause
+
+            // Gunakan alpha yang lebih rendah (0.4) karena layar Pause sudah punya dim sendiri
+            let settings = SettingsScreen(sceneSize: self.size, dimAlpha: 0.75)
+
+            settings.onClosed = { [weak self] in
+                guard let self else { return }
+
+                self.activeSettingsSource = nil
+            }
+
+            settings.show(in: self)
+        }
+
+        screen.onHomeTapped = { [weak self] in
+            // Kembali ke menu utama
+            self?.setUpScene(showsMenuImmediately: true)
         }
 
         addChild(screen)

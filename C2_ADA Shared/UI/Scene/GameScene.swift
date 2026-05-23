@@ -19,6 +19,13 @@ import GameplayKit
 /// - routes Game Over transitions to `GameScene+GameOver.swift` and the
 ///   `GameOverScreen` overlay.
 final class GameScene: SKScene {
+    
+    // MARK: - Settings Source
+
+    enum SettingsSource {
+           case menu
+           case pause
+       }
 
     // MARK: - Dependencies
 
@@ -54,6 +61,7 @@ final class GameScene: SKScene {
     var lastUpdateTime: TimeInterval = 0
     private var menuScreen: MenuScreen?
     private var dimmedStartScreen: DimmedStartScreen?
+    var activeSettingsSource: SettingsSource?
     private var currentTimeScale: CGFloat = 1.0
     private var targetTimeScale: CGFloat = 1.0
 
@@ -148,19 +156,32 @@ final class GameScene: SKScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        let sceneLocation = touch.location(in: self)
-
-        if handlePauseButtonTouch(at: sceneLocation) { return }
-        guard gameState != .gameOver,
-              gameState != .paused else { return }
-
-        // MENU SCREEN INPUT
-        if let menuScreen {
-            menuScreen.handleTouch(at: sceneLocation)
+        
+        // Blokir semua input jika countdown sedang berjalan
+        if childNode(withName: "resumeCountdownNode") != nil {
             return
         }
         
-        // DIMMED SCREEN INPUT
+        let sceneLocation = touch.location(in: self)
+
+        // 1. GAME OVER STATE INPUT
+        if gameState == .gameOver {
+            handleGameOverTouch(at: sceneLocation)
+            return
+        }
+
+        // 2. PAUSE STATE INPUT
+        if gameState == .paused {
+            if let settingsScreen = childNode(withName: "settingsScreen") as? SettingsScreen {
+                _ = settingsScreen.handleTouch(at: sceneLocation)
+            } else {
+                handlePauseTouch(at: sceneLocation)
+            }
+            return
+        }
+
+        // 3. DIMMED SCREEN INPUT
+        // Jika masih dalam layar "Hold to Start", blokir input lain termasuk Pause
         if let dimmedStartScreen {
             dimmedStartScreen.beginHold()
             handle(
@@ -170,11 +191,22 @@ final class GameScene: SKScene {
             )
             return
         }
+
+        // 4. PAUSE BUTTON (Hanya bisa ditekan saat bermain)
+        if handlePauseButtonTouch(at: sceneLocation) { return }
+        
+        // 5. MENU SCREEN INPUT
+        if let menuScreen {
+            menuScreen.handleTouch(at: sceneLocation)
+            return
+        }
+        
         handle(inputSystem.begin(at: touch.location(in: gameplayNode)))
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
+        // Blokir input gerakan/hold jika sedang pause atau game over
         guard gameState != .gameOver,
               gameState != .paused else { return }
 
@@ -183,15 +215,14 @@ final class GameScene: SKScene {
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        let sceneLocation = touch.location(in: self)
 
-        if gameState == .paused {
-            handlePauseTouch(at: sceneLocation)
+        // Blokir input akhir/release jika sedang pause atau game over
+        // Kecuali untuk interaksi UI tertentu jika diperlukan
+        if gameState == .gameOver {
             return
         }
 
-        if gameState == .gameOver {
-            handleGameOverTouch(at: sceneLocation)
+        if gameState == .paused {
             return
         }
 
@@ -821,9 +852,20 @@ private extension GameScene {
             self.showDimmedStartScreen()
         }
 
-        menu.onSettingsTapped = {
+        menu.onSettingsTapped = { [weak self] in
+            guard let self else { return }
 
-            print("Settings tapped")
+            self.activeSettingsSource = .menu
+
+            let settings = SettingsScreen(sceneSize: self.size)
+
+            settings.onClosed = { [weak self] in
+                guard let self else { return }
+
+                self.activeSettingsSource = nil
+            }
+
+            settings.show(in: self)
         }
 
         menu.show(in: self, animated: animated)

@@ -7,25 +7,17 @@
 
 import SpriteKit
 
-// MARK: - Pause Screen
-
-/// Temporary SpriteKit pause overlay for `GameScene`.
-///
-/// This screen is intentionally small and replaceable. It gives this branch a
-/// real pause state and a visible resume path, while the final pause UI can
-/// later keep the same `onResume` callback and replace the layout internals.
 final class PauseScreen: SKNode {
 
-    // MARK: - Button Actions
+    // MARK: - Callback
 
-    /// Called when the placeholder Resume button is tapped.
     var onResume: (() -> Void)?
+    var onSettingsTapped: (() -> Void)?
+    var onHomeTapped: (() -> Void)?
 
     // MARK: - Dependencies
 
-    /// Game state that should be restored when this pause screen resumes.
     let resumeGameState: GameState
-
     private let configuration: GameConfiguration
 
     /// Shared haptics wrapper used by the Resume button.
@@ -33,9 +25,13 @@ final class PauseScreen: SKNode {
 
     // MARK: - Touch Targets
 
-    private var resumeButtonNode: SKNode?
+    private let dimNode = SKShapeNode()
+    private let pauseBlock = SKSpriteNode(imageNamed: "PAUSED BLOCK")
+    private let resumeButton = SKSpriteNode(imageNamed: "RESUME BUTTON")
+    private let settingsButton = SKSpriteNode(imageNamed: "PAUSED SETTINGS BUTTON")
+    private let homeButton = SKSpriteNode(imageNamed: "HOME BUTTON")
 
-    // MARK: - Initialization
+    // MARK: - Init
 
     init(
         configuration: GameConfiguration,
@@ -48,44 +44,15 @@ final class PauseScreen: SKNode {
         super.init()
 
         name = "pauseOverlay"
-        zPosition = RenderLayer.pauseOverlay
+        zPosition = RenderLayer.pause
         alpha = 0
 
-        buildScreen()
+        setupDim()
+        setupPanel()
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    // MARK: - Presentation
-
-    /// Fades the pause overlay in after `GameScene` adds it to the scene.
-    func present() {
-        run(SKAction.fadeIn(withDuration: 0.12))
-    }
-
-    /// Fades the overlay out before `GameScene` removes it.
-    func dismiss(completion: @escaping () -> Void) {
-        run(SKAction.fadeOut(withDuration: 0.10), completion: completion)
-    }
-
-    // MARK: - Touch Handling
-
-    /// Handles placeholder pause UI touches and reports whether they were used.
-    func handleTouch(at location: CGPoint) -> Bool {
-        // MARK: Screen-Space Touch Conversion
-        // GameScene sends scene coordinates. Convert them into this overlay's
-        // local space before testing button frames.
-        let screenLocation = parent?.convert(location, to: self) ?? location
-
-        if isTouch(screenLocation, inside: resumeButtonNode, xInset: -16, yInset: -12) {
-            hapticsController.playLightButtonTap()
-            onResume?()
-            return true
-        }
-
-        return false
     }
 
     /// Uses accumulated frames so the whole grouped button remains tappable.
@@ -103,124 +70,135 @@ final class PauseScreen: SKNode {
     }
 }
 
-// MARK: - Screen Construction
+// MARK: - Setup
 
 private extension PauseScreen {
 
-    /// Adds a dim layer, title, and one resume button for temporary testing.
-    func buildScreen() {
-        addChild(makeDimLayer())
-        addChild(makePanel())
-    }
-
-    // MARK: - Dim Layer
-
-    /// Darkens gameplay while leaving the paused road visible underneath.
-    func makeDimLayer() -> SKNode {
-        let dimLayer = SKShapeNode(rectOf: configuration.referenceScreenSize)
-        dimLayer.name = "pauseDimLayer"
-        dimLayer.fillColor = pauseDimColor
-        dimLayer.strokeColor = .clear
-        dimLayer.zPosition = 0
-        return dimLayer
-    }
-
-    // MARK: - Panel
-
-    /// Builds the temporary content group that future pause UI can replace.
-    func makePanel() -> SKNode {
-        let panelNode = SKNode()
-        panelNode.name = "pausePanel"
-        panelNode.zPosition = 1
-
-        let backgroundNode = SKShapeNode(rectOf: CGSize(width: 246, height: 150), cornerRadius: 8)
-        backgroundNode.name = "pausePanelBackground"
-        backgroundNode.fillColor = pausePanelColor
-        backgroundNode.strokeColor = pauseAccentColor
-        backgroundNode.lineWidth = 3
-        panelNode.addChild(backgroundNode)
-
-        let titleLabel = makeLabel(
-            text: "PAUSED",
-            fontName: configuration.primaryFontName,
-            fontSize: 44,
-            color: pauseAccentColor
+    func setupDim() {
+        dimNode.path = CGPath(
+            rect: CGRect(
+                x: -configuration.referenceScreenSize.width / 2,
+                y: -configuration.referenceScreenSize.height / 2,
+                width: configuration.referenceScreenSize.width,
+                height: configuration.referenceScreenSize.height
+            ),
+            transform: nil
         )
-        titleLabel.name = "pauseTitle"
-        titleLabel.position = CGPoint(x: 0, y: 32)
-        panelNode.addChild(titleLabel)
 
-        let resumeButton = makeResumeButton()
-        panelNode.addChild(resumeButton)
-        resumeButtonNode = resumeButton
-
-        return panelNode
+        // Menggunakan warna dim yang sudah ada
+        dimNode.fillColor = ColorHelper.fromHex(0x49270E, alpha: 0.58)
+        dimNode.strokeColor = .clear
+        dimNode.zPosition = 0
+        addChild(dimNode)
     }
 
-    // MARK: - Resume Button
-
-    /// Temporary resume control so pause can be tested before final UI lands.
-    func makeResumeButton() -> SKNode {
-        let buttonNode = SKNode()
-        buttonNode.name = "pauseResumeButton"
-        buttonNode.position = CGPoint(x: 0, y: -42)
-
-        let backgroundNode = SKShapeNode(rectOf: CGSize(width: 142, height: 42), cornerRadius: 7)
-        backgroundNode.name = "pauseResumeButtonBackground"
-        backgroundNode.fillColor = pauseAccentColor
-        backgroundNode.strokeColor = pauseAccentColor.withAlphaComponent(0.75)
-        backgroundNode.lineWidth = 2
-        buttonNode.addChild(backgroundNode)
-
-        let labelNode = makeLabel(
-            text: "Resume",
-            fontName: configuration.secondaryFontName,
-            fontSize: 20,
-            color: pauseButtonTextColor
+    func setupPanel() {
+        // 1. Pause Block
+        SpriteNodeHelper.resize(
+            node: pauseBlock,
+            width: configuration.referenceScreenSize.width * 1.05
         )
-        labelNode.name = "pauseResumeButtonLabel"
-        buttonNode.addChild(labelNode)
+        pauseBlock.position = CGPoint(x: -10, y: 30)
+        pauseBlock.zPosition = 1
+        addChild(pauseBlock)
 
-        return buttonNode
-    }
+        // 2. Resume Button
+        resumeButton.name = "resumeButton"
+        SpriteNodeHelper.resize(
+            node: resumeButton,
+            width: pauseBlock.size.width * 0.96
+        )
+        // diletakkan di dalam block bagian atas sedikit
+        resumeButton.position = CGPoint(x: 5, y: -10)
+        resumeButton.zPosition = 2
+        pauseBlock.addChild(resumeButton)
 
-    // MARK: - Label Factory
+        // 3. Settings Button (Dikecilkan agar muat berdampingan)
+        settingsButton.name = "pauseSettingsButton"
+        SpriteNodeHelper.resize(
+            node: settingsButton,
+            width: pauseBlock.size.width * 0.35
+        )
+        // diletakkan di bawah resume button, sebelah kanan
+        settingsButton.position = CGPoint(x: 75, y: -75)
+        settingsButton.zPosition = 2
+        pauseBlock.addChild(settingsButton)
 
-    /// Keeps placeholder labels consistent and easy to swap later.
-    func makeLabel(
-        text: String,
-        fontName: String,
-        fontSize: CGFloat,
-        color: SKColor
-    ) -> SKLabelNode {
-        let label = SKLabelNode(fontNamed: fontName)
-        label.text = text
-        label.fontSize = fontSize
-        label.fontColor = color
-        label.horizontalAlignmentMode = .center
-        label.verticalAlignmentMode = .center
-        label.zPosition = 2
-        return label
+        // 4. Home Button (Sprite-based)
+        homeButton.name = "pauseHomeButton"
+        SpriteNodeHelper.resize(
+            node: homeButton,
+            width: pauseBlock.size.width * 0.35
+        )
+        // diletakkan di sebelah kiri settings button
+        homeButton.position = CGPoint(x: -60, y: -75)
+        homeButton.zPosition = 2
+        pauseBlock.addChild(homeButton)
     }
 }
 
-// MARK: - Pause Colors
+// MARK: - Public Methods
 
-private extension PauseScreen {
+extension PauseScreen {
 
-    var pauseDimColor: SKColor {
-        SKColor(red: 0.29, green: 0.15, blue: 0.05, alpha: 0.58)
+    func present() {
+        run(SKAction.fadeIn(withDuration: 0.12))
     }
 
-    var pausePanelColor: SKColor {
-        SKColor(red: 0.18, green: 0.10, blue: 0.04, alpha: 0.92)
+    func dismiss(completion: @escaping () -> Void) {
+        run(SKAction.fadeOut(withDuration: 0.10), completion: completion)
     }
 
-    var pauseAccentColor: SKColor {
-        SKColor(red: 0.96, green: 0.55, blue: 0.20, alpha: 1.0)
+    func handleTouch(at location: CGPoint) -> Bool {
+        // Konversi lokasi sentuhan ke koordinat pauseBlock (tempat button berada)
+        let pointInBlock = convert(location, to: pauseBlock)
+
+        // MARK: - Hitbox Detection
+        
+        // Resume Button
+        if isPointInHitbox(pointInBlock, node: resumeButton, widthMult: 0.8, heightMult: 0.6) {
+            animateButton(resumeButton)
+            onResume?()
+            hapticsController.playLightButtonTap()
+            return true
+        }
+
+        // Settings Button
+        if isPointInHitbox(pointInBlock, node: settingsButton, widthMult: 0.8, heightMult: 0.6) {
+            animateButton(settingsButton)
+            onSettingsTapped?()
+            hapticsController.playLightButtonTap()
+            return true
+        }
+
+        // Home Button Hitbox
+        if isPointInHitbox(pointInBlock, node: homeButton, widthMult: 0.8, heightMult: 0.6) {
+            animateButton(homeButton)
+            onHomeTapped?()
+            hapticsController.playLightButtonTap()
+            return true
+        }
+
+        return false
     }
 
-    var pauseButtonTextColor: SKColor {
-        SKColor(red: 0.23, green: 0.11, blue: 0.03, alpha: 1.0)
+    private func isPointInHitbox(_ point: CGPoint, node: SKSpriteNode, widthMult: CGFloat, heightMult: CGFloat) -> Bool {
+        let hitboxWidth = node.size.width * widthMult
+        let hitboxHeight = node.size.height * heightMult
+        
+        let hitboxRect = CGRect(
+            x: node.position.x - hitboxWidth / 2,
+            y: node.position.y - hitboxHeight / 2,
+            width: hitboxWidth,
+            height: hitboxHeight
+        )
+        
+        return hitboxRect.contains(point)
+    }
+
+    private func animateButton(_ node: SKNode) {
+        let press = SKAction.scale(to: 0.92, duration: 0.05)
+        let release = SKAction.scale(to: 1.0, duration: 0.05)
+        node.run(SKAction.sequence([press, release]))
     }
 }
