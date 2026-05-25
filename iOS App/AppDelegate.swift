@@ -12,6 +12,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        // Reset highscore ke 0 setiap kali aplikasi dijalankan (untuk keperluan testing)
+        UserDefaults.standard.set(0, forKey: "Nomad.DistanceScoreSystem.highScoreMeters")
         return true
     }
 

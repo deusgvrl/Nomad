@@ -60,10 +60,22 @@ final class GameScene: SKScene {
     var gameOverScreen: GameOverScreen?
     var lastUpdateTime: TimeInterval = 0
     private var menuScreen: MenuScreen?
-    private var dimmedStartScreen: DimmedStartScreen?
+    var dimmedStartScreen: DimmedStartScreen?
+    var tutorialScreen: TutorialScreen?
+    var tutorialScreen2: TutorialScreen2?
+    var tutorialScreen3: TutorialScreen3?
+    var tutorialScreen4: TutorialScreen4?
+    var hasShownSteerTutorial: Bool = false
+    var hasShownReleaseTutorial: Bool = false
+    var hasShownLatchTutorial: Bool = false
+    var tutorialInitialTouchLocation: CGPoint?
+    var isShowingSteerTutorial = false
+    var isShowingReleaseTutorial = false
+    var isShowingLatchTutorial = false
+    var canDismissSteerTutorial = false
     var activeSettingsSource: SettingsSource?
-    private var currentTimeScale: CGFloat = 1.0
-    private var targetTimeScale: CGFloat = 1.0
+    var currentTimeScale: CGFloat = 1.0
+    var targetTimeScale: CGFloat = 1.0
 
     // MARK: - Scene Factory
 
@@ -113,64 +125,50 @@ final class GameScene: SKScene {
     }
 
     override func update(_ currentTime: TimeInterval) {
-        // MARK: Frame Delta
-        // SpriteKit gives absolute time here, so convert it to a capped delta
-        // before physics uses it. Passing absolute time made jumps fly too far.
         let deltaTime = makeDeltaTime(from: currentTime)
         guard gameState == .playing else { return }
 
         spawnSystem?.update(deltaTime: deltaTime)
         updateJumpingPlayer(deltaTime)
         updateDistanceScore(deltaTime)
+        tutorialScreen3?.update()
+        
+        // TRIGGER TUTORIAL 2 SAAT JARAK MENCAPAI 40m
+        // Hanya muncul jika highscore < 400m
+        let highscore = UserDefaults.standard.integer(forKey: "Nomad.DistanceScoreSystem.highScoreMeters")
+        if highscore < 400 && !hasShownSteerTutorial && distanceScoreSystem.currentDistanceMeters >= 40 {
+            showSteerTutorial()
+        }
         
         if let vehicle = currentVehicleEntity, let player = playerEntity {
             if playerState == .riding {
                 movementSystem.updateLerp(vehicle: vehicle, deltaTime: deltaTime)
                 player.place(on: vehicle)
+                checkReleaseTutorialTrigger()
             }
 
-            // MARK: Riding Collision Game Over
-            // CollisionSystem checks the active vehicle's hitboxes while the
-            // player is riding. A collision now flows through the real game-over
-            // entry instead of only flipping state.
             if updateCollisionGameOverIfNeeded(for: vehicle) { return }
-            
-            // Update rage State
             vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: deltaTime)
         }
 
-        
         if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
             player.place(on: vehicle)
-
-            // MARK: Riding Collision Game Over
-            // CollisionSystem checks the active vehicle's hitboxes while the
-            // player is riding. A collision now flows through the real game-over
-            // entry instead of only flipping state.
             if updateCollisionGameOverIfNeeded(for: vehicle) { return }
         }
-
     }
 
     // MARK: - Touch Input
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        
-        // Blokir semua input jika countdown sedang berjalan
-        if childNode(withName: "resumeCountdownNode") != nil {
-            return
-        }
-        
+        if childNode(withName: "resumeCountdownNode") != nil { return }
         let sceneLocation = touch.location(in: self)
 
-        // 1. GAME OVER STATE INPUT
         if gameState == .gameOver {
             handleGameOverTouch(at: sceneLocation)
             return
         }
 
-        // 2. PAUSE STATE INPUT
         if gameState == .paused {
             if let settingsScreen = childNode(withName: "settingsScreen") as? SettingsScreen {
                 _ = settingsScreen.handleTouch(at: sceneLocation)
@@ -179,61 +177,92 @@ final class GameScene: SKScene {
             }
             return
         }
-
-        // 3. DIMMED SCREEN INPUT
-        // Jika masih dalam layar "Hold to Start", blokir input lain termasuk Pause
-        if let dimmedStartScreen {
-            dimmedStartScreen.beginHold()
-            handle(
-                inputSystem.begin(
-                    at: touch.location(in: gameplayNode)
-                )
-            )
+        
+        if isShowingSteerTutorial {
+            tutorialInitialTouchLocation = touch.location(in: self)
             return
         }
 
-        // 4. PAUSE BUTTON (Hanya bisa ditekan saat bermain)
-        if handlePauseButtonTouch(at: sceneLocation) { return }
+        if let dimmedStartScreen {
+            dimmedStartScreen.beginHold()
+            handle(inputSystem.begin(at: touch.location(in: gameplayNode)))
+            return
+        }
         
-        // 5. MENU SCREEN INPUT
+        if let tutorialScreen {
+            tutorialScreen.beginHold()
+            handle(inputSystem.begin(at: touch.location(in: gameplayNode)))
+            return
+        }
+
+        if let tutorialScreen4 {
+            tutorialScreen4.beginHold()
+            handle(inputSystem.begin(at: touch.location(in: gameplayNode)))
+            return
+        }
+
+        if handlePauseButtonTouch(at: sceneLocation) { return }
         if let menuScreen {
             menuScreen.handleTouch(at: sceneLocation)
             return
         }
-        
         handle(inputSystem.begin(at: touch.location(in: gameplayNode)))
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        // Blokir input gerakan/hold jika sedang pause atau game over
-        guard gameState != .gameOver,
-              gameState != .paused else { return }
+        
+        // DISMISS TUTORIAL 2 SAAT DRAG
+        if let tutorialScreen2, isShowingSteerTutorial {
 
+            let currentLocation = touch.location(in: self)
+
+            // pertama kali move saat tutorial muncul
+            if tutorialInitialTouchLocation == nil {
+                tutorialInitialTouchLocation = currentLocation
+                return
+            }
+
+            let dx = currentLocation.x - tutorialInitialTouchLocation!.x
+            let dy = currentLocation.y - tutorialInitialTouchLocation!.y
+
+            let distance = sqrt(dx * dx + dy * dy)
+
+            // hanya dismiss jika benar-benar drag
+            if distance > 15 {
+
+                tutorialScreen2.dismiss()
+                self.tutorialScreen2 = nil
+
+                targetTimeScale = 1.0
+                currentTimeScale = 1.0
+                self.speed = 1.0
+
+                isShowingSteerTutorial = false
+            }
+
+            return
+        }
+
+        guard gameState != .gameOver, gameState != .paused else { return }
         handle(inputSystem.move(to: touch.location(in: gameplayNode)))
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-
-        // Blokir input akhir/release jika sedang pause atau game over
-        // Kecuali untuk interaksi UI tertentu jika diperlukan
-        if gameState == .gameOver {
-            return
-        }
-
-        if gameState == .paused {
-            return
-        }
-
+        
+        if gameState == .gameOver || gameState == .paused { return }
         handle(inputSystem.end(at: touch.location(in: gameplayNode)))
+        
+        if isShowingSteerTutorial {
+            canDismissSteerTutorial = true
+            return
+        }
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        guard gameState != .gameOver,
-              gameState != .paused else { return }
-
+        guard gameState != .gameOver, gameState != .paused else { return }
         handle(inputSystem.end(at: touch.location(in: gameplayNode)))
     }
 }
@@ -241,13 +270,7 @@ final class GameScene: SKScene {
 // MARK: - Scene Setup
 
 extension GameScene {
-
     func setUpScene(skipsMenu: Bool = false, showsMenuImmediately: Bool = false) {
-//        GameFontRegistry.registerGameFontsIfNeeded(configuration: configuration)
-
-        // MARK: Haptics Reset
-        // Rebuilding the scene happens after retry, home, and first launch.
-        // Stop any previous rage pulse before the new vehicle cycle starts.
         hapticsController.stopRagePulse()
         hapticsController.prepare()
 
@@ -272,9 +295,17 @@ extension GameScene {
         distanceScoreSystem.resetRun()
         setUpHUD()
         inputSystem.reset()
+        
+        self.tutorialScreen = nil
+        self.tutorialScreen2 = nil
+        self.tutorialScreen3 = nil
+        self.tutorialScreen4 = nil
+        self.hasShownSteerTutorial = false
+        self.hasShownReleaseTutorial = false
+        self.hasShownLatchTutorial = false
 
         if skipsMenu {
-            showDimmedStartScreen()
+            showStartOverlay()
         } else {
             showMenuScreen(animated: !showsMenuImmediately)
         }
@@ -284,18 +315,8 @@ extension GameScene {
 private extension GameScene {
 
     func setUpNodes() {
-        // This keeps the setup shape from `dev`:
-        // - `worldNode` owns floor/obstacle rows from `SpawnSystem`.
-        // - `gameplayNode` owns the active player and vehicle.
-        //
-        // The original dev scene used the default bottom-left scene anchor.
-        // This scene uses anchorPoint (0.5, 0.5), so the equivalent world
-        // placement is shifted down from the centered coordinate system.
         worldNode.name = "world"
-        worldNode.position = CGPoint(
-            x: 0,
-            y: -size.height * 0.8
-        )
+        worldNode.position = CGPoint(x: 0, y: -size.height * 0.8)
         worldNode.zPosition = RenderLayer.floor
         addChild(worldNode)
 
@@ -304,9 +325,6 @@ private extension GameScene {
         gameplayNode.zPosition = RenderLayer.vehicle
         addChild(gameplayNode)
         
-//        let ringDiameter = configuration.latchDistance * 2
-//        let path = CGPath(ellipseIn: CGRect(x: -ringDiameter/2, y: -ringDiameter/2, width: ringDiameter, height: ringDiameter), transform: nil)
-//        targetReticleNode.path = path
         let ringRadius = configuration.latchDistance
         targetReticleNode.path = CGPath(ellipseIn: CGRect(x: -ringRadius, y: -ringRadius, width: ringRadius*2, height: ringRadius*2), transform: nil)
         targetReticleNode.zPosition = -1
@@ -320,56 +338,37 @@ private extension GameScene {
     }
 
     func setUpSpawnSystem() {
-        spawnSystem = SpawnSystem(
-            worldNode: worldNode,
-            sceneSize: size
-        )
+        spawnSystem = SpawnSystem(worldNode: worldNode, sceneSize: size)
     }
 
     func setUpMovementPrototype() {
-        // V1 uses one active vehicle slot only. Later treadmill spawning can
-        // replace this same slot with new vehicle assets.
         let vehicleEntity = VehicleEntity(configuration: configuration)
         vehicleEntity.setPosition(configuration.currentVehiclePosition)
-
         let playerEntity = PlayerEntity(configuration: configuration)
         playerEntity.place(on: vehicleEntity)
-
         gameplayNode.addChild(vehicleEntity.node)
         gameplayNode.addChild(playerEntity.node)
-
         currentVehicleEntity = vehicleEntity
         self.playerEntity = playerEntity
     }
 
     func setUpMovementBoundsGuide() {
         guard configuration.showsMovementBoundsGuide else { return }
-
-        // Temporary prototype guide:
-        // - white line = the shallow movement lane from the hi-fi grid image;
-        // - yellow caps = the current estimated canyon/wall limits.
-        //
-        // When the real canyon assets arrive, the numbers can be updated in
-        // `GameConfiguration` without changing the movement system.
         let path = CGMutablePath()
         path.move(to: configuration.movementAxisStartPosition)
         path.addLine(to: configuration.movementAxisEndPosition)
-
         let guideNode = SKShapeNode(path: path)
         guideNode.name = "movementBoundsGuide"
         guideNode.strokeColor = SKColor.white.withAlphaComponent(0.85)
         guideNode.lineWidth = 4
-        guideNode.lineCap = .round
         guideNode.zPosition = RenderLayer.overlay
         gameplayNode.addChild(guideNode)
-
         addMovementBoundCap(at: configuration.movementAxisStartPosition)
         addMovementBoundCap(at: configuration.movementAxisEndPosition)
     }
 
     func addMovementBoundCap(at position: CGPoint) {
         let capNode = SKShapeNode(circleOfRadius: 5)
-        capNode.name = "movementBoundCap"
         capNode.position = position
         capNode.fillColor = SKColor(red: 1.00, green: 0.86, blue: 0.24, alpha: 1.0)
         capNode.strokeColor = SKColor.white.withAlphaComponent(0.9)
@@ -382,120 +381,70 @@ private extension GameScene {
 // MARK: - Frame Update
 
 private extension GameScene {
-
-    // MARK: - Collision Game Over
-
     func updateCollisionGameOverIfNeeded(for vehicle: VehicleEntity) -> Bool {
-        // MARK: Obstacle Collision Priority
-        // Obstacles are the primary crash rule; check them first so the debug
-        // message and player state describe the obstacle hit.
-        if updateObstacleCollisionGameOverIfNeeded(for: vehicle) {
-            return true
-        }
-
-        // MARK: Vehicle Collision Priority
-        // The existing collision system also supports vehicle-to-vehicle hits,
-        // so route those through the same game-over overlay path.
+        if updateObstacleCollisionGameOverIfNeeded(for: vehicle) { return true }
         return updateVehicleCollisionGameOverIfNeeded(for: vehicle)
     }
 
     func updateObstacleCollisionGameOverIfNeeded(for vehicle: VehicleEntity) -> Bool {
         guard let obstacles = spawnSystem?.obstacleEntities,
-              let hitObstacle = collisionSystem.checkCollision(
-                vehicle: vehicle,
-                with: obstacles
-              ) else {
+              collisionSystem.checkCollision(vehicle: vehicle, with: obstacles) != nil else {
             return false
         }
-
-        // MARK: Obstacle Crash Result
-        // Use the formal game-over flow so obstacle crashes show score,
-        // highscore, retry, and home UI just like fall game over.
-        print("Collision with \(hitObstacle.type.rawValue)")
         enterGameOver(playerEndState: .crashed)
         return true
     }
 
     func updateVehicleCollisionGameOverIfNeeded(for vehicle: VehicleEntity) -> Bool {
         guard let otherVehicles = spawnSystem?.vehicleEntities,
-              collisionSystem.checkVehicleCollision(
-                playerVehicle: vehicle,
-                with: otherVehicles
-              ) != nil else {
+              collisionSystem.checkVehicleCollision(playerVehicle: vehicle, with: otherVehicles) != nil else {
             return false
         }
-
-        // MARK: Vehicle Crash Result
-        // Keep car-to-car collision consistent with obstacle crashes when the
-        // collision system reports another vehicle hit.
-        print("Collision with another vehicle!")
         enterGameOver(playerEndState: .crashed)
         return true
     }
 
-    // MARK: - Jumping Player
-
     func updateJumpingPlayer(_ deltaTime: TimeInterval) {
         guard let playerEntity else { return }
-
-        // While jumping, SpriteKit's frame loop updates the player's lane path.
-        // Drag input is ignored until the player latches again.
         if playerState == .jumping {
             let launchResult = launchSystem?.update(player: playerEntity, deltaTime: deltaTime)
-            
             let allVehicles = spawnSystem?.vehicleEntities ?? []
             let activeVehicles = allVehicles.filter { $0 !== currentVehicleEntity }
-            
             let bestTarget = latchSystem?.getBestTarget(player: playerEntity, vehicles: activeVehicles)
             
             if let target = bestTarget {
-                targetTimeScale = 0.6
+                // Jangan timpa jika sedang dalam tutorial latch (yang lebih lambat)
+                if !isShowingLatchTutorial {
+                    targetTimeScale = 0.6
+                }
                 targetReticleNode.position = CGPoint(x: target.node.position.x, y: target.node.position.y + 40)
-                
-                if targetReticleNode.alpha == 0 {
-                    targetReticleNode.run(SKAction.fadeAlpha(to: 1.0, duration: 0.15))
-                }
+                if targetReticleNode.alpha == 0 { targetReticleNode.run(SKAction.fadeAlpha(to: 1.0, duration: 0.15)) }
             } else {
-                targetTimeScale = 1.0
-                if targetReticleNode.alpha > 0 {
-                    targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.15))
+                if !isShowingLatchTutorial {
+                    targetTimeScale = 1.0
                 }
+                if targetReticleNode.alpha > 0 { targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.15)) }
             }
-            
-            if launchResult == .fell {
-                enterFallGameOver()
-            }
+            if launchResult == .fell { enterFallGameOver() }
         }
     }
 
-    // MARK: - Delta Time
-
-    /// Caps delta time so a simulator pause does not create a giant jump update.
     func makeDeltaTime(from currentTime: TimeInterval) -> TimeInterval {
         defer { lastUpdateTime = currentTime }
-
         guard lastUpdateTime > 0 else { return 0 }
         let rawDelta = min(currentTime - lastUpdateTime, configuration.maximumDeltaTime)
-        
         let scaleDiff = targetTimeScale - currentTimeScale
-        if abs(scaleDiff) < 0.01 {
-            currentTimeScale = targetTimeScale
-        } else {
-            currentTimeScale += scaleDiff * CGFloat(rawDelta * 4.0)
-        }
-        
+        if abs(scaleDiff) < 0.01 { currentTimeScale = targetTimeScale }
+        else { currentTimeScale += scaleDiff * CGFloat(rawDelta * 4.0) }
         let dilatedDelta = rawDelta * TimeInterval(currentTimeScale)
         self.speed = currentTimeScale
         return dilatedDelta
     }
-
 }
 
 // MARK: - Game Over Presentation Support
 
 extension GameScene {
-
-    /// Restores normal scene timing before the Game Over overlay is presented.
     func resetGameOverTiming() {
         hapticsController.stopRagePulse()
         targetTimeScale = 1.0
@@ -503,17 +452,9 @@ extension GameScene {
         speed = 1.0
     }
 
-    /// Clears jump-only visuals while preserving the exact lane-linear fall endpoint.
     func cleanUpFallImpactPresentation() {
-        // MARK: Fall Reticle Cleanup
-        // A missed latch should hide the target indicator before the overlay
-        // appears so the Game Over screen is not visually cluttered.
         targetReticleNode.removeAllActions()
         targetReticleNode.alpha = 0.0
-
-        // MARK: Fall Player Cleanup
-        // Keep the player exactly where `LaunchSystem` ended the lane movement;
-        // only reset visual scale/actions before showing Game Over.
         if let playerEntity {
             playerEntity.node.removeAllActions()
             playerEntity.node.setScale(1.0)
@@ -524,75 +465,43 @@ extension GameScene {
 // MARK: - Input State Machine
 
 private extension GameScene {
-
-    /// Applies the player action rules:
-    /// hold starts riding, drag steers while riding, release jumps, hold while
-    /// jumping tries to latch.
     func handle(_ inputPhase: InputPhase) {
         guard let playerEntity, let currentVehicleEntity else { return }
         playerEntity.recordInput(inputPhase)
 
         switch inputPhase {
         case .holding(let startLocation) where gameState == .waitingToStart:
-            // First hold begins the run and attaches the player to the car.
             playerEntity.attach(to: currentVehicleEntity)
-            
-            // Siapkan callback untuk lompat paksa
-            currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.onJumpRequested = { [weak self] in
-                self?.forcePlayerToJump()
-            }
-            
-            // Mulai siklus kemarahan
+            currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.onJumpRequested = { [weak self] in self?.forcePlayerToJump() }
             currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.startRageCycle()
-            
             movementSystem.beginSteering(vehicle: currentVehicleEntity, at: startLocation)
             gameState = .playing
             playerState = .riding
 
         case .holding(let startLocation) where gameState == .playing && playerState == .riding:
-            // A new hold while already riding resets the drag starting point.
             movementSystem.beginSteering(vehicle: currentVehicleEntity, at: startLocation)
 
         case .dragging where gameState == .playing && playerState == .riding:
-            // Dragging only works while riding. The movement system keeps the
-            // vehicle and player inside the road-width band.
-            movementSystem.updateVehicleAndRider(
-                vehicle: currentVehicleEntity,
-                player: playerEntity,
-                inputPhase: inputPhase
-            )
+            movementSystem.updateVehicleAndRider(vehicle: currentVehicleEntity, player: playerEntity, inputPhase: inputPhase)
 
         case .released where gameState == .playing && playerState == .riding:
-            // Releasing detaches the player and starts the forward jump arc.
-            // Pindah jadi function, biar bisa di reuse untuk rage counter
+            if let tutorialScreen3 {
+                tutorialScreen3.beginRelease()
+            }
             forcePlayerToJump()
 
         case .holding(let startLocation) where gameState == .playing && playerState == .jumping:
-            // Holding again while airborne attempts to latch. A miss switches
-            // into a short straight fall along the same car-facing lane.
             playerState = .latching
             let allVehicles = spawnSystem?.vehicleEntities ?? []
             let activeVehicles = allVehicles.filter { $0 !== currentVehicleEntity }
-            
             if let latchedVehicle = latchSystem?.attemptLatch(player: playerEntity, onto: activeVehicles) {
                 completeLatch(on: latchedVehicle, startLocation: startLocation)
             } else {
                 let failedLatchFallDistance = configuration.vehicleSize.height * 0.55
-                playerEntity.component(ofType: LaunchComponent.self)?.beginFailedLatchFall(
-                    from: playerEntity.node.position,
-                    direction: configuration.jumpForwardUnitVector,
-                    distance: failedLatchFallDistance,
-                    duration: configuration.playerFallSettleDuration
-                )
+                playerEntity.component(ofType: LaunchComponent.self)?.beginFailedLatchFall(from: playerEntity.node.position, direction: configuration.jumpForwardUnitVector, distance: failedLatchFallDistance, duration: configuration.playerFallSettleDuration)
                 playerState = .jumping
             }
-
-        case .dragging where gameState == .playing && playerState == .jumping:
-            // Airborne drag is intentionally ignored by the current design.
-            break
-
-        default:
-            break
+        default: break
         }
     }
 }
@@ -600,52 +509,57 @@ private extension GameScene {
 // MARK: - Movement State Helpers
 
 private extension GameScene {
-    
-    /// Executes the jumping sequence, detaching the player and launching them forward.
     func forcePlayerToJump() {
         guard let currentVehicleEntity, let playerEntity, playerState == .riding else { return }
-        
-        // MARK: Rage Haptics Stop On Jump
-        // Manual release and forced rage jumps both pass through this method.
-        // Stop the pulse immediately instead of waiting for the delayed visual
-        // reset so the haptic warning ends when the player leaves the vehicle.
         currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.stopRageHaptics()
-
         movementSystem.endSteering(vehicle: currentVehicleEntity)
-        
-        // Menambahkan delay sebelum kendaraan kembali ke kondisi Idle agar efek marahnya masih terlihat sejenak
         let wait = SKAction.wait(forDuration: 0.3)
-        let reset = SKAction.run { [weak currentVehicleEntity] in
-            //Reset state kendaraan kembali ke idle
-            currentVehicleEntity?.component(ofType: VehicleRageComponent.self)?.resetRageCycle()
-        }
+        let reset = SKAction.run { [weak currentVehicleEntity] in currentVehicleEntity?.component(ofType: VehicleRageComponent.self)?.resetRageCycle() }
         currentVehicleEntity.node.run(SKAction.sequence([wait, reset]))
-        
         spawnSystem?.adopt(oldVehicle: currentVehicleEntity)
-            
         currentVehicleEntity.removeComponent(ofType: MovementComponent.self)
-        
-        // Creating a new MovementComponent with speed: 0 for a receding movement.
-        let recedingMovement = MovementComponent(speed: 0)
-        currentVehicleEntity.addComponent(recedingMovement)
-        
+        currentVehicleEntity.addComponent(MovementComponent(speed: 0))
         launchSystem?.launch(player: playerEntity)
         playerEntity.playJumpVisual(duration: configuration.jumpForwardDuration)
         playerState = .jumping
     }
     
-    /// Movement-focused placeholder for missed jumps and falls.
-    ///
-    /// This branch should stay focused on player/vehicle movement, so falling no
-    /// longer triggers the game-over overlay. The old game-over functions are
-    /// kept below, disconnected, for the later game-over branch.
     func pausePlayerAfterFall() {
         targetTimeScale = 1.0
         playerEntity?.cancelJumpVisual()
         targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.1))
         playerState = .falling
-        if let currentVehicleEntity {
-            movementSystem.endSteering(vehicle: currentVehicleEntity)
+        if let currentVehicleEntity { movementSystem.endSteering(vehicle: currentVehicleEntity) }
+    }
+    
+    func checkReleaseTutorialTrigger() {
+        let highscore = UserDefaults.standard.integer(forKey: "Nomad.DistanceScoreSystem.highScoreMeters")
+        guard highscore < 400, !hasShownReleaseTutorial, playerState == .riding, let vehicle = currentVehicleEntity else { return }
+        
+        // 1. Check Rage 2 (HittingState)
+        if let rageComponent = vehicle.component(ofType: VehicleRageComponent.self) {
+            if rageComponent.stateMachine?.currentState is VehicleHittingState {
+                showReleaseTutorial()
+                return
+            }
+        }
+        
+        // 2. Check Jump Range
+        let allVehicles = spawnSystem?.vehicleEntities ?? []
+        let activeVehicles = allVehicles.filter { $0 !== currentVehicleEntity }
+        
+        let landingPos = configuration.jumpForwardLandingPosition(from: vehicle.node.position)
+        
+        for v in activeVehicles {
+            let vPos = v.node.position
+            let dx = vPos.x - landingPos.x
+            let dy = vPos.y - landingPos.y
+            let dist = sqrt(dx * dx + dy * dy)
+            
+            if dist < configuration.latchDistance * 1.5 {
+                showReleaseTutorial()
+                return
+            }
         }
     }
     
@@ -654,104 +568,31 @@ private extension GameScene {
         playerEntity.cancelJumpVisual()
         targetTimeScale = 1.0
         targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.1))
-        // 1. Remove the old vehicle from the scene
-//        if let oldVehicle = currentVehicleEntity {
-//            oldVehicle.node.removeFromParent()
-//            spawnSystem?.removeVehicle(entity: oldVehicle)
-//        }
-        
-        // 2. Remove new vehicle from SpawnSystem's automatic flow
         spawnSystem?.removeVehicle(entity: vehicle)
-        
-        // MARK: Dev New Vehicle Parenting
-        // Match `dev`: move the latched vehicle into gameplayNode only when it
-        // came from another parent, then place it at the active vehicle slot.
         let newParent = gameplayNode
         if let oldParent = vehicle.node.parent, oldParent !== newParent {
             let interceptedPos = oldParent.convert(vehicle.node.position, to: newParent)
             vehicle.node.removeFromParent()
             vehicle.node.position = interceptedPos
-//            vehicle.node.position = configuration.currentVehiclePosition
             newParent.addChild(vehicle.node)
-            
         }
-
         vehicle.node.zPosition = RenderLayer.vehicle
-        
-        // 4. Initialize steering starting from the spawn position
-        let steering = MovementComponent(
-            anchorPosition: configuration.currentVehiclePosition,
-            currentPosition: vehicle.node.position,
-            screenSize: configuration.referenceScreenSize,
-            vehicleSize: configuration.vehicleSize,
-            movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
-            movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
-            dragSensitivity: configuration.dragSensitivity
-        )
+        let steering = MovementComponent(anchorPosition: configuration.currentVehiclePosition, currentPosition: vehicle.node.position, screenSize: configuration.referenceScreenSize, vehicleSize: configuration.vehicleSize, movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees, movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds, dragSensitivity: configuration.dragSensitivity)
         steering.startLerping(to: configuration.currentVehiclePosition)
         vehicle.addComponent(steering)
-        
-        // MARK: Dev Latch Completion
-        // Attach the player to the new vehicle and optionally continue steering
-        // from the touch that triggered the latch.
         playerEntity.attach(to: vehicle)
         currentVehicleEntity = vehicle
-        
-        // Siapkan callback untuk lompat paksa pada mobil baru
-        vehicle.component(ofType: VehicleRageComponent.self)?.onJumpRequested = { [weak self] in
-            self?.forcePlayerToJump()
-        }
-        // Mulai siklus kemarahan
+        vehicle.component(ofType: VehicleRageComponent.self)?.onJumpRequested = { [weak self] in self?.forcePlayerToJump() }
         vehicle.component(ofType: VehicleRageComponent.self)?.startRageCycle()
-        
-        if let startLocation {
-            movementSystem.beginSteering(vehicle: vehicle, at: startLocation)
-        }
+        if let startLocation { movementSystem.beginSteering(vehicle: vehicle, at: startLocation) }
         gameState = .playing
         playerState = .riding
     }
 }
-//        let oldParent = currentVehicleEntity.node.parent
-//        let newParent = vehicle.node.parent
-//        let scene = currentVehicleEntity.node.scene
-//        
-//        if let scene, let oldParent, let newParent {
-//            let scenePosOld = oldParent.convert(currentVehicleEntity.node.position, to: scene)
-//            
-//            currentVehicleEntity.node.removeFromParent()
-//            vehicle.node.removeFromParent()
-//            
-//            currentVehicleEntity.node.position = newParent.convert(scenePosOld, from: scene)
-//            newParent.addChild(currentVehicleEntity.node)
-//            
-//            vehicle.node.position = configuration.currentVehiclePosition
-//            oldParent.addChild(vehicle.node)
-//            
-//            currentVehicleEntity.node.zPosition = 100
-//            vehicle.node.zPosition = RenderLayer.vehicle
-//            
-//            currentVehicleEntity.removeComponent(ofType: MovementComponent.self)
-//            
-//            let steering = MovementComponent (
-//                position: vehicle.node.position,
-//                screenSize: configuration.referenceScreenSize,
-//                vehicleSize: configuration.vehicleSize,
-//                movementAxisAngleInDegrees: configuration.movementAxisAngleInDegrees,
-//                movementAxisXOffsetBounds: configuration.movementAxisXOffsetBounds,
-//                dragSensitivity: configuration.dragSensitivity
-//            )
-//            vehicle.addComponent(steering)
-//            
-//        }
-//    }
-
 
 // MARK: - Score Result
 
-/// Finished-run score data shown by the Game Over overlay.
 struct ScoreResult {
-    // MARK: - Score Values
-
     let distanceMeters: Int
     let highScoreMeters: Int
     let isNewHighScore: Bool
@@ -759,134 +600,46 @@ struct ScoreResult {
 
 // MARK: - Distance Score System
 
-/// Stores the live distance score and the saved high score.
-///
-/// `GameScene` owns when the run is active, while this object owns the simple
-/// score math and the `UserDefaults` persistence used by the Game Over screen.
 final class DistanceScoreSystem {
-
-    // MARK: - Storage Keys
-
-    private enum StorageKey {
-        static let highScoreMeters = "Nomad.DistanceScoreSystem.highScoreMeters"
-    }
-
-    // MARK: - Dependencies
-
+    private enum StorageKey { static let highScoreMeters = "Nomad.DistanceScoreSystem.highScoreMeters" }
     private let userDefaults: UserDefaults
-
-    // MARK: - Runtime State
-
     private(set) var currentDistanceMeters: Int = 0
     private var distanceMetersAccumulator: CGFloat = 0
-
-    // MARK: - Initialization
-
-    init(userDefaults: UserDefaults = .standard) {
-        self.userDefaults = userDefaults
-    }
-
-    // MARK: - Run Lifecycle
-
-    /// Clears only the current run score; the stored high score remains saved.
-    func resetRun() {
-        currentDistanceMeters = 0
-        distanceMetersAccumulator = 0
-    }
-
-    // MARK: - Distance Update
-
-    /// Adds distance for one active gameplay frame.
-    ///
-    /// The accumulator keeps fractional meters between frames so the displayed
-    /// integer score increases smoothly without losing tiny per-frame values.
+    init(userDefaults: UserDefaults = .standard) { self.userDefaults = userDefaults }
+    func resetRun() { currentDistanceMeters = 0; distanceMetersAccumulator = 0 }
     func updateDistance(deltaTime: TimeInterval, metersPerSecond: CGFloat) {
         guard deltaTime > 0 else { return }
-
         distanceMetersAccumulator += CGFloat(deltaTime) * metersPerSecond
         currentDistanceMeters = max(0, Int(distanceMetersAccumulator.rounded(.down)))
     }
-
-    // MARK: - Distance Input
-
-    /// Lets future systems set distance directly without touching HUD or storage.
-    func setDistanceMeters(_ meters: Int) {
-        currentDistanceMeters = max(0, meters)
-        distanceMetersAccumulator = CGFloat(currentDistanceMeters)
-    }
-
-    // MARK: - Result
-
-    /// Compares the finished run with the saved high score and persists wins.
+    func setDistanceMeters(_ meters: Int) { currentDistanceMeters = max(0, meters); distanceMetersAccumulator = CGFloat(currentDistanceMeters) }
     func finishRun() -> ScoreResult {
         let previousHighScore = userDefaults.integer(forKey: StorageKey.highScoreMeters)
         let isNewHighScore = currentDistanceMeters > previousHighScore
         let finalHighScore = isNewHighScore ? currentDistanceMeters : previousHighScore
-
-        if isNewHighScore {
-            userDefaults.set(finalHighScore, forKey: StorageKey.highScoreMeters)
-        }
-
-        return ScoreResult(
-            distanceMeters: currentDistanceMeters,
-            highScoreMeters: finalHighScore,
-            isNewHighScore: isNewHighScore
-        )
+        if isNewHighScore { userDefaults.set(finalHighScore, forKey: StorageKey.highScoreMeters) }
+        return ScoreResult(distanceMeters: currentDistanceMeters, highScoreMeters: finalHighScore, isNewHighScore: isNewHighScore)
     }
 }
-
 
 // MARK: - Menu Screen
 
 private extension GameScene {
-
-    // Menampilkan layar menu utama saat game dimulai
     func showMenuScreen(animated: Bool = true) {
-        let menu = MenuScreen(
-            sceneSize: size,
-            hapticsController: hapticsController
-        )
+        let menu = MenuScreen(sceneSize: size, hapticsController: hapticsController)
         menu.onStartTapped = { [weak self] in
             guard let self else { return }
             self.menuScreen = nil
-            self.showDimmedStartScreen()
+            self.showStartOverlay()
         }
-
         menu.onSettingsTapped = { [weak self] in
             guard let self else { return }
-
             self.activeSettingsSource = .menu
-
             let settings = SettingsScreen(sceneSize: self.size)
-
-            settings.onClosed = { [weak self] in
-                guard let self else { return }
-
-                self.activeSettingsSource = nil
-            }
-
+            settings.onClosed = { [weak self] in self?.activeSettingsSource = nil }
             settings.show(in: self)
         }
-
         menu.show(in: self, animated: animated)
         self.menuScreen = menu
-    }
-}
-
-// MARK: - Dimmed Screen
-private extension GameScene {
-    func showDimmedStartScreen() {
-        let screen = DimmedStartScreen(
-            sceneSize: size
-        )
-
-        screen.onHoldStarted = { [weak self] in
-            guard let self else { return }
-            self.dimmedStartScreen = nil
-            self.gameState = .waitingToStart
-        }
-
-        screen.show(in: self)
-        self.dimmedStartScreen = screen
     }
 }
