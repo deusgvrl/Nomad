@@ -72,11 +72,16 @@
 				UI/Scene/GameScene.swift,
 				"UI/Scene/GameScene+GameOver.swift",
 				"UI/Scene/GameScene+HUD.swift",
+				"UI/Scene/GameScene+Tutorial.swift",
 				UI/Screen/DimmedStartScreen.swift,
 				UI/Screen/GameOverScreen.swift,
 				UI/Screen/MenuScreen.swift,
 				UI/Screen/PauseScreen.swift,
 				UI/Screen/SettingsScreen.swift,
+				UI/Screen/TutorialScreen.swift,
+				UI/Screen/TutorialScreen2.swift,
+				UI/Screen/TutorialScreen3.swift,
+				UI/Screen/TutorialScreen4.swift,
 			);
 			target = 4FF7333B2FAC93D000E2CC60 /* C2_ADA iOS */;
 		};
