@@ -183,6 +183,13 @@ private extension GameScene {
         // instead of leaving the last active rage rhythm alive.
         hapticsController.stopRagePulse()
 
+        // MARK: Pause Audio Suspension
+        // A finger drag is no longer active once the pause overlay takes input.
+        // Preserve engine/rage ownership for resume, but do not restore a
+        // turning loop until a new riding drag actually moves the vehicle.
+        audioController.stopLoop(.steering)
+        audioController.suspendLoops()
+
         gameState = .paused
         setGameplayNodesPaused(true)
         showPauseScreen(resumeState: resumeState)
@@ -201,6 +208,11 @@ private extension GameScene {
         spawnSystem?.resetFrameTiming()
         lastUpdateTime = 0
         gameState = resumeState
+
+        // MARK: Resume Audio Restoration
+        // Resume occurs only after the countdown finishes. The controller
+        // recreates retained valid loops once, unless Sound is muted.
+        audioController.resumeLoops()
     }
 
     /// Pauses only gameplay containers so HUD and overlays remain interactive.
@@ -250,7 +262,12 @@ private extension GameScene {
             self.activeSettingsSource = .pause
 
             // Gunakan alpha yang lebih rendah (0.4) karena layar Pause sudah punya dim sendiri
-            let settings = SettingsScreen(sceneSize: self.size, dimAlpha: 0.75)
+            let settings = SettingsScreen(
+                sceneSize: self.size,
+                hapticsController: self.hapticsController,
+                audioController: self.audioController,
+                dimAlpha: 0.75
+            )
 
             settings.onClosed = { [weak self] in
                 guard let self else { return }

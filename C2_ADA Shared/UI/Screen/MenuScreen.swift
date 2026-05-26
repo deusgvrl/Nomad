@@ -19,6 +19,9 @@ final class MenuScreen: SKNode {
     /// Shared haptics wrapper for menu buttons and the nested Settings screen.
     private let hapticsController: HapticsController
 
+    /// Shared audio wrapper passed into Settings so its Sound toggle persists.
+    private let audioController: AudioController
+
     // MARK: - UI Nodes
 
     private let backgroundNode =
@@ -39,12 +42,15 @@ final class MenuScreen: SKNode {
 
     init(
         sceneSize: CGSize,
-        hapticsController: HapticsController = .shared
+        hapticsController: HapticsController = .shared,
+        audioController: AudioController = .shared
     ) {
         self.hapticsController = hapticsController
+        self.audioController = audioController
         settingsScreen = SettingsScreen(
             sceneSize: sceneSize,
-            hapticsController: hapticsController
+            hapticsController: hapticsController,
+            audioController: audioController
         )
         super.init()
 
@@ -186,9 +192,9 @@ extension MenuScreen {
         case "startButton":
             hapticsController.playLightButtonTap()
             animateButton(startButton)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.hide()
-                self.onStartTapped?()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                self?.hide()
+                self?.onStartTapped?()
             }
 
         case "settingsButton":
