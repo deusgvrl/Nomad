@@ -148,7 +148,9 @@ final class GameScene: SKScene {
         spawnSystem?.update(deltaTime: timing.worldDelta)
         updateJumpingPlayer(timing.playerDelta)
         updateDistanceScore(timing.worldDelta)
+        tutorialScreen2?.update()
         tutorialScreen3?.update()
+        tutorialScreen4?.update()
         
         // TRIGGER TUTORIAL 2 SAAT JARAK MENCAPAI 40m
         // Hanya muncul jika highscore < 250m
@@ -489,8 +491,8 @@ private extension GameScene {
                 if isShowingLatchTutorial {
                     // Offset disesuaikan agar lebih maju dan pas di tengah mobil
                     targetTutorialHighlightNode.position = CGPoint(
-                        x: target.node.position.x + -2,
-                        y: target.node.position.y + 35,
+                        x: target.node.position.x - 2,
+                        y: target.node.position.y + 35
                     )
                     
                     if targetTutorialHighlightNode.alpha == 0 {

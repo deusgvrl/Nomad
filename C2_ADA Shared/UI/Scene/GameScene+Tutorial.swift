@@ -47,7 +47,10 @@ extension GameScene {
         hasShownSteerTutorial = true
         isShowingSteerTutorial = true
 
-        let screen = TutorialScreen2(sceneSize: size)
+        let screen = TutorialScreen2(
+            sceneSize: size,
+            targetNode: currentVehicleEntity?.node
+        )
 
         screen.onDismissed = { }
 
@@ -107,7 +110,18 @@ extension GameScene {
         hasShownLatchTutorial = true
         isShowingLatchTutorial = true
 
-        let screen = TutorialScreen4(sceneSize: size)
+        // Mencari mobil terdekat di depan untuk dijadikan target visual di Tutorial 4
+        let allVehicles = spawnSystem?.vehicleEntities ?? []
+        let targetVehicle = allVehicles
+            .filter { $0 !== currentVehicleEntity && $0.node.position.y > (playerEntity?.node.position.y ?? 0) }
+            .min(by: { 
+                let pPos = playerEntity?.node.position ?? .zero
+                let d1 = hypot($0.node.position.x - pPos.x, $0.node.position.y - pPos.y)
+                let d2 = hypot($1.node.position.x - pPos.x, $1.node.position.y - pPos.y)
+                return d1 < d2
+            })
+
+        let screen = TutorialScreen4(sceneSize: size, targetNode: targetVehicle?.node)
 
         screen.onHoldStarted = { [weak self] in
             guard let self else { return }

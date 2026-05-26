@@ -44,17 +44,28 @@ final class TutorialScreen: SKNode {
 
 private extension TutorialScreen {
     func setupDim(sceneSize: CGSize) {
-        dimNode.path = CGPath(
-            rect: CGRect(
-                origin: CGPoint(
-                    x: -sceneSize.width / 2,
-                    y: -sceneSize.height / 2
-                ),
-                size: sceneSize
-            ),
-            transform: nil
+        let screenRect = CGRect(x: -sceneSize.width / 2, y: -sceneSize.height / 2, width: sceneSize.width, height: sceneSize.height)
+        let path = UIBezierPath(rect: screenRect)
+        
+        // Hole rect (Circle area)
+        let config = GameConfiguration.standard
+        let visualCenter = CGPoint(
+            x: config.currentVehiclePosition.x - 3,
+            y: config.currentVehiclePosition.y + 25
         )
+        let radius: CGFloat = 80
+        let holeRect = CGRect(
+            x: visualCenter.x - radius,
+            y: visualCenter.y - radius,
+            width: radius * 2,
+            height: radius * 2
+        )
+        
+        // Menambahkan lingkaran dengan arah terbalik untuk membuat lubang
+        let holePath = UIBezierPath(ovalIn: holeRect)
+        path.append(holePath.reversing())
 
+        dimNode.path = path.cgPath
         dimNode.strokeColor = .clear
         dimNode.fillColor = ColorHelper.fromHex(0x49270E)
         dimNode.alpha = 0.70

@@ -19,9 +19,12 @@ final class TutorialScreen2: SKNode {
     private let steerLabel = SKLabelNode(
         fontNamed: GameConfiguration.standard.primaryFontName
     )
+    
+    private weak var targetNode: SKNode?
 
     // MARK: - Initialization
-    init(sceneSize: CGSize) {
+    init(sceneSize: CGSize, targetNode: SKNode? = nil) {
+        self.targetNode = targetNode
         super.init()
         name = "tutorialScreen2"
         zPosition = RenderLayer.dimmed
@@ -41,17 +44,38 @@ final class TutorialScreen2: SKNode {
 // MARK: - Setup
 private extension TutorialScreen2 {
     func setupDim(sceneSize: CGSize) {
-        dimNode.path = CGPath(
-            rect: CGRect(
-                origin: CGPoint(x: -sceneSize.width / 2, y: -sceneSize.height / 2),
-                size: sceneSize
-            ),
-            transform: nil
-        )
         dimNode.strokeColor = .clear
         dimNode.fillColor = ColorHelper.fromHex(0x49270E)
         dimNode.alpha = 0.70
         addChild(dimNode)
+        updateDimPath(sceneSize: sceneSize)
+    }
+
+    func updateDimPath(sceneSize: CGSize) {
+        let screenRect = CGRect(x: -sceneSize.width / 2, y: -sceneSize.height / 2, width: sceneSize.width, height: sceneSize.height)
+        let path = UIBezierPath(rect: screenRect)
+        
+        let holePos: CGPoint
+        if let target = targetNode, let parent = target.parent, let scene = scene {
+            let scenePos = scene.convert(target.position, from: parent)
+            holePos = CGPoint(x: scenePos.x - 3, y: scenePos.y + 25)
+        } else {
+            let config = GameConfiguration.standard
+            holePos = CGPoint(x: config.currentVehiclePosition.x - 3, y: config.currentVehiclePosition.y + 25)
+        }
+
+        let radius: CGFloat = 85
+        let holeRect = CGRect(
+            x: holePos.x - radius,
+            y: holePos.y - radius,
+            width: radius * 2,
+            height: radius * 2
+        )
+        
+        let holePath = UIBezierPath(ovalIn: holeRect)
+        path.append(holePath.reversing())
+
+        dimNode.path = path.cgPath
     }
 
     func createArrowPath() -> CGPath {
@@ -145,5 +169,11 @@ extension TutorialScreen2 {
     func dismiss() {
         hide()
         onDismissed?()
+    }
+    
+    func update() {
+        if let scene = scene {
+            updateDimPath(sceneSize: scene.size)
+        }
     }
 }

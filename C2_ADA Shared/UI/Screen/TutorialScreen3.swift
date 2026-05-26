@@ -47,22 +47,30 @@ final class TutorialScreen3: SKNode {
 
 private extension TutorialScreen3 {
     func setupDim(sceneSize: CGSize) {
-        dimNode.path = CGPath(
-            rect: CGRect(
-                origin: CGPoint(
-                    x: -sceneSize.width / 2,
-                    y: -sceneSize.height / 2
-                ),
-                size: sceneSize
-            ),
-            transform: nil
-        )
-
         dimNode.strokeColor = .clear
         dimNode.fillColor = ColorHelper.fromHex(0x49270E)
         dimNode.alpha = 0.70
-        
+
         addChild(dimNode)
+    }
+
+    func updateDimPath(sceneSize: CGSize) {
+        let screenRect = CGRect(x: -sceneSize.width / 2, y: -sceneSize.height / 2, width: sceneSize.width, height: sceneSize.height)
+        let path = UIBezierPath(rect: screenRect)
+
+        // Use tutorialCircle's position for the hole
+        let radius: CGFloat = 85
+        let holeRect = CGRect(
+            x: tutorialCircle.position.x - radius,
+            y: tutorialCircle.position.y - radius,
+            width: radius * 2,
+            height: radius * 2
+        )
+
+        let holePath = UIBezierPath(ovalIn: holeRect)
+        path.append(holePath.reversing())
+
+        dimNode.path = path.cgPath
     }
 
     func setupTutorialCircle() {
@@ -118,11 +126,11 @@ private extension TutorialScreen3 {
     }
     
     func updateCirclePosition() {
-        if let target = targetNode {
-            // Menyesuaikan titik tengah agar pas di mobil
+        if let target = targetNode, let parent = target.parent, let scene = scene {
+            let scenePos = scene.convert(target.position, from: parent)
             tutorialCircle.position = CGPoint(
-                x: target.position.x - 3,
-                y: target.position.y + 25
+                x: scenePos.x - 3,
+                y: scenePos.y + 25
             )
         } else {
             let config = GameConfiguration.standard
@@ -130,6 +138,11 @@ private extension TutorialScreen3 {
                 x: config.currentVehiclePosition.x - 3,
                 y: config.currentVehiclePosition.y + 25
             )
+        }
+
+        // Update dim hole position
+        if let scene = scene {
+            updateDimPath(sceneSize: scene.size)
         }
     }
 }
