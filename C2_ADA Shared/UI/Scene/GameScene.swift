@@ -49,6 +49,7 @@ final class GameScene: SKScene {
     /// start position.
     let worldNode = SKNode()
     private let targetReticleNode = SKSpriteNode()
+    private let targetReticleShapeNode = SKShapeNode()
     let targetTutorialHighlightNode = SKNode()
     let gameplayNode = SKNode()
     var spawnSystem: SpawnSystem?
@@ -134,13 +135,14 @@ final class GameScene: SKScene {
 
     override func update(_ currentTime: TimeInterval) {
         let timing = makeDeltaTime(from: currentTime)
-
+        
         // Selalu periksa visibilitas highlight tutorial meskipun sedang pause atau game over
         if !isShowingLatchTutorial {
             if targetTutorialHighlightNode.alpha > 0 {
                 targetTutorialHighlightNode.alpha = 0
             }
         }
+        
         guard gameState == .playing else { return }
 
         spawnSystem?.update(deltaTime: timing.worldDelta)
@@ -359,21 +361,22 @@ private extension GameScene {
         gameplayNode.zPosition = RenderLayer.vehicle
         addChild(gameplayNode)
         
-//        let ringDiameter = configuration.latchDistance * 2
-//        let path = CGPath(ellipseIn: CGRect(x: -ringDiameter/2, y: -ringDiameter/2, width: ringDiameter, height: ringDiameter), transform: nil)
-//        targetReticleNode.path = path
+        // 1. Setup Reticle Gambar (SKSpriteNode)
         targetReticleNode.texture = SKTexture(imageNamed: NomadAsset.reticle.rawValue)
-        
         let ringDiameter = configuration.latchDistance * 2.5
         targetReticleNode.size = CGSize(width: ringDiameter, height: ringDiameter)
         targetReticleNode.zPosition = -1
-        targetReticleNode.strokeColor = ColorHelper.fromHex(0xF6A74C) // Orange like Tutorial 1
-        targetReticleNode.lineWidth = 4
         targetReticleNode.alpha = 0
-        
-        targetReticleNode.xScale = 1.0
-        targetReticleNode.yScale = 1.0
         worldNode.addChild(targetReticleNode)
+
+        // 2. Setup Reticle Bentuk (SKShapeNode)
+        let shapeRadius = configuration.latchDistance
+        targetReticleShapeNode.path = CGPath(ellipseIn: CGRect(x: -shapeRadius, y: -shapeRadius, width: shapeRadius*2, height: shapeRadius*2), transform: nil)
+        targetReticleShapeNode.strokeColor = ColorHelper.fromHex(0xF6A74C) // Orange Tutorial 1
+        targetReticleShapeNode.lineWidth = 4
+        targetReticleShapeNode.zPosition = -1
+        targetReticleShapeNode.alpha = 0
+        worldNode.addChild(targetReticleShapeNode)
 
         // MARK: Target Tutorial Highlight Setup
         let targetRadius: CGFloat = 65
@@ -522,10 +525,6 @@ private extension GameScene {
                 
                 if targetReticleNode.alpha > 0 { targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.15)) }
             }
-            if launchResult == .fell { enterFallGameOver() }
-        } else {
-            if targetTutorialHighlightNode.alpha > 0 {
-                targetTutorialHighlightNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.15))
             
             if currentTimeScale < 1.0 {
                 playerEntity.node.speed = 0.5
@@ -536,7 +535,13 @@ private extension GameScene {
             if launchResult == .fell {
                 enterFallGameOver()
             }
-        } 
+        } else {
+            if targetTutorialHighlightNode.alpha > 0 {
+                targetTutorialHighlightNode.run(
+                    SKAction.fadeAlpha(to: 0.0, duration: 0.15)
+                )
+            }
+        }
     }
 
     // MARK: - Delta Time
