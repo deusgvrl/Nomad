@@ -36,6 +36,7 @@ final class GameScene: SKScene {
     private let latchSystem: LatchSystem?
     let distanceScoreSystem = DistanceScoreSystem()
     let hapticsController: HapticsController
+    let audioController: AudioController
     private let collisionSystem = CollisionSystem()
 
     // MARK: - World Container
@@ -98,13 +99,15 @@ final class GameScene: SKScene {
     init(
         size: CGSize,
         configuration: GameConfiguration = .standard,
-        hapticsController: HapticsController = .shared
+        hapticsController: HapticsController = .shared,
+        audioController: AudioController = .shared
     ) {
         self.configuration = configuration
         self.movementSystem = MovementSystem()
         self.launchSystem = LaunchSystem(configuration: configuration)
         self.latchSystem = LatchSystem(configuration: configuration)
         self.hapticsController = hapticsController
+        self.audioController = audioController
         super.init(size: size)
         anchorPoint = CGPoint(x: 0.5, y: 0.5)
     }
@@ -115,6 +118,7 @@ final class GameScene: SKScene {
         self.launchSystem = LaunchSystem(configuration: .standard)
         self.latchSystem = LatchSystem(configuration: .standard)
         self.hapticsController = .shared
+        self.audioController = .shared
         super.init(coder: aDecoder)
         anchorPoint = CGPoint(x: 0.5, y: 0.5)
     }
@@ -123,6 +127,7 @@ final class GameScene: SKScene {
 
     override func didMove(to view: SKView) {
         hapticsController.prepare()
+        audioController.attach(to: self)
         setUpScene()
     }
 
@@ -158,6 +163,13 @@ final class GameScene: SKScene {
                         steerIdleTimer -= timing.worldDelta
                         if steerIdleTimer <= 0 {
                             player.idleVisual()
+
+                            // MARK: Steering Audio Idle Stop
+                            // SpriteKit sends no new move event when a finger
+                            // becomes stationary. End the turning loop with the
+                            // established steering-visual idle window so it
+                            // represents active sliding only.
+                            audioController.stopLoop(.steering)
                         }
                     }
                 }
@@ -293,9 +305,19 @@ extension GameScene {
         hapticsController.stopRagePulse()
         hapticsController.prepare()
 
+        // MARK: Audio Run Reset
+        // Retry and Home rebuild the same scene instance. Clear active loop
+        // intent before removing children so an old engine or rage warning
+        // cannot leak into the next waiting/menu state.
+        audioController.resetGameplayAudio()
+
         removeAllChildren()
         worldNode.removeAllChildren()
         gameplayNode.removeAllChildren()
+
+        // `removeAllChildren()` also removes the controller's scene audio root.
+        // Reattach it immediately so the first hold can start engine playback.
+        audioController.attach(to: self)
 
         anchorPoint = CGPoint(x: 0.5, y: 0.5)
         backgroundColor = SKColor(red: 0.78, green: 0.58, blue: 0.36, alpha: 1.0)
@@ -528,12 +550,34 @@ private extension GameScene {
             gameState = .playing
             playerState = .riding
 
+            // MARK: Music Handoff On Run Start
+            // The home track deliberately survives the menu and hold-to-start
+            // overlay. Swap tracks only when input starts an actual playable run.
+            audioController.stopLoop(.homeBackground)
+            audioController.startLoop(.inGameMusic)
+
+            // MARK: Initial Ride Engine Loop
+            // The engine represents only the vehicle currently controlled by
+            // the player, so it begins when the first ride becomes active.
+            audioController.startLoop(.engine)
+
         case .holding(let startLocation) where gameState == .playing && playerState == .riding:
             playerEntity.idleVisual()
             movementSystem.beginSteering(vehicle: currentVehicleEntity, at: startLocation)
 
         case .dragging where gameState == .playing && playerState == .riding:
+            let previousPosition = currentVehicleEntity.node.position
             movementSystem.updateVehicleAndRider(vehicle: currentVehicleEntity, player: playerEntity, inputPhase: inputPhase)
+
+            // MARK: Active Steering Audio
+            // Input can continue while the car is clamped at the road edge.
+            // Sound only while the vehicle actually changes position so an
+            // unmoving drag does not imply a turn that never happened.
+            if currentVehicleEntity.node.position != previousPosition {
+                audioController.startLoop(.steering)
+            } else {
+                audioController.stopLoop(.steering)
+            }
 
         case .released where gameState == .playing && playerState == .riding:
             if let tutorialScreen3 {
@@ -563,6 +607,20 @@ private extension GameScene {
     func forcePlayerToJump() {
         guard let currentVehicleEntity, let playerEntity, playerState == .riding else { return }
         currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.stopRageHaptics()
+        currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.stopRageAudio()
+
+        // MARK: Ride Audio Stop On Launch
+        // Manual release and rage-forced launch share this method. Both stop
+        // the owned vehicle and finger-drag loops as soon as the rider leaves.
+        audioController.stopLoop(.engine)
+        audioController.stopLoop(.steering)
+        audioController.stopLoop(.rageHitting)
+
+        // MARK: Jump Sound Effect
+        // Both release input and a rage-forced launch enter through this method.
+        // Sound at takeoff because landing success is determined later.
+        audioController.play(.playerJump)
+
         movementSystem.endSteering(vehicle: currentVehicleEntity)
         let wait = SKAction.wait(forDuration: 0.3)
         let reset = SKAction.run { [weak currentVehicleEntity] in currentVehicleEntity?.component(ofType: VehicleRageComponent.self)?.resetRageCycle() }
@@ -638,6 +696,13 @@ private extension GameScene {
         if let startLocation { movementSystem.beginSteering(vehicle: vehicle, at: startLocation) }
         gameState = .playing
         playerState = .riding
+
+        // MARK: Successful Latch Audio
+        // This method is reached only after an airborne latch, so the landing
+        // effect is not played for the starting vehicle. The newly controlled
+        // car then owns the single active engine loop.
+        audioController.play(.landsOnCar)
+        audioController.startLoop(.engine)
     }
 }
 
@@ -677,7 +742,16 @@ final class DistanceScoreSystem {
 
 private extension GameScene {
     func showMenuScreen(animated: Bool = true) {
-        let menu = MenuScreen(sceneSize: size, hapticsController: hapticsController)
+        // MARK: Home Music Loop
+        // Menu Settings and the subsequent hold-to-start overlay share this
+        // soundtrack; the first playable hold performs the music handoff.
+        audioController.startLoop(.homeBackground)
+
+        let menu = MenuScreen(
+            sceneSize: size,
+            hapticsController: hapticsController,
+            audioController: audioController
+        )
         menu.onStartTapped = { [weak self] in
             guard let self else { return }
             self.menuScreen = nil
@@ -686,7 +760,11 @@ private extension GameScene {
         menu.onSettingsTapped = { [weak self] in
             guard let self else { return }
             self.activeSettingsSource = .menu
-            let settings = SettingsScreen(sceneSize: self.size)
+            let settings = SettingsScreen(
+                sceneSize: self.size,
+                hapticsController: self.hapticsController,
+                audioController: self.audioController
+            )
             settings.onClosed = { [weak self] in self?.activeSettingsSource = nil }
             settings.show(in: self)
         }

@@ -26,10 +26,23 @@ class VehicleRageComponent: GKComponent {
     /// This component only forwards those state updates into the shared haptics
     /// controller so CoreHaptics stays isolated from state classes.
     private let hapticsController: HapticsController
+
+    // MARK: - Audio
+
+    /// Central audio controller for the repeating final rage warning.
+    ///
+    /// Rage state transitions own the valid lifetime of the hitting sound; the
+    /// component forwards only start/stop intent so states never build nodes.
+    private let audioController: AudioController
     
     /// Inisialisasi komponen dengan referensi ke node visual kendaraan
-    init(node: VehicleNode, hapticsController: HapticsController = .shared) {
+    init(
+        node: VehicleNode,
+        hapticsController: HapticsController = .shared,
+        audioController: AudioController = .shared
+    ) {
         self.hapticsController = hapticsController
+        self.audioController = audioController
         super.init()
         
         // Membuat instance dari setiap status dan memasukkan node serta komponen ini
@@ -65,6 +78,7 @@ class VehicleRageComponent: GKComponent {
     /// Menghentikan siklus kemarahan dan kembali ke kondisi tenang
     func resetRageCycle() {
         stopRageHaptics()
+        stopRageAudio()
         stateMachine?.enter(VehicleCalmState.self)
     }
 
@@ -85,5 +99,17 @@ class VehicleRageComponent: GKComponent {
     /// the active gameplay flow.
     func stopRageHaptics() {
         hapticsController.stopRagePulse()
+    }
+
+    // MARK: - Rage Audio
+
+    /// Starts the repeated hitting sound only for the final danger phase.
+    func startRageAudio() {
+        audioController.startLoop(.rageHitting)
+    }
+
+    /// Ends the repeated hitting sound on jump, calm reset, or interrupted ride.
+    func stopRageAudio() {
+        audioController.stopLoop(.rageHitting)
     }
 }
