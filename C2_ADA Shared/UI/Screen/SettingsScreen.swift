@@ -250,9 +250,9 @@ extension SettingsScreen {
         run(
             SKAction.sequence([
                 SKAction.fadeOut(withDuration: 0.2),
-                SKAction.run { 
-                    self.isHidden = true
-                    self.removeFromParent()
+                SKAction.run {[weak self] in
+                    self?.isHidden = true
+                    self?.removeFromParent()
                 }
             ])
         )

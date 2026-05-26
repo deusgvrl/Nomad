@@ -125,12 +125,12 @@ final class GameScene: SKScene {
     }
 
     override func update(_ currentTime: TimeInterval) {
-        let deltaTime = makeDeltaTime(from: currentTime)
+        let timing = makeDeltaTime(from: currentTime)
         guard gameState == .playing else { return }
 
-        spawnSystem?.update(deltaTime: deltaTime)
-        updateJumpingPlayer(deltaTime)
-        updateDistanceScore(deltaTime)
+        spawnSystem?.update(deltaTime: timing.worldDelta)
+        updateJumpingPlayer(timing.playerDelta)
+        updateDistanceScore(timing.worldDelta)
         tutorialScreen3?.update()
         
         // TRIGGER TUTORIAL 2 SAAT JARAK MENCAPAI 40m
@@ -153,10 +153,6 @@ final class GameScene: SKScene {
             vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: timing.worldDelta)
         }
 
-        if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
-            player.place(on: vehicle)
-            if updateCollisionGameOverIfNeeded(for: vehicle) { return }
-        }
     }
 
     // MARK: - Touch Input

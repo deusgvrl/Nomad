@@ -158,9 +158,9 @@ extension MenuScreen {
         case "startButton":
             hapticsController.playLightButtonTap()
             animateButton(startButton)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.hide()
-                self.onStartTapped?()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                self?.hide()
+                self?.onStartTapped?()
             }
 
         case "settingsButton":
