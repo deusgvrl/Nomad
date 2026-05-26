@@ -40,6 +40,11 @@ extension GameScene {
         // pulse must end before the result screen appears.
         hapticsController.stopRagePulse()
 
+        // MARK: Game Over Audio Stop
+        // No vehicle remains under player control once the run ends. Stop
+        // engine, turning, and rage loops before displaying result actions.
+        audioController.stopAllLoops()
+
         if let currentVehicleEntity {
             currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.stopRageHaptics()
             movementSystem.endSteering(vehicle: currentVehicleEntity)
@@ -73,6 +78,11 @@ extension GameScene {
     /// the final impact frame so the player does not receive another settle
     /// movement when the overlay appears.
     func enterFallGameOver() {
+        // MARK: Fall Impact Sound
+        // Play once when the missed latch is confirmed, before the overlay is
+        // presented. `enterGameOver` stops loops but leaves this one-shot sound.
+        audioController.play(.playerFalls)
+
         resetGameOverTiming()
         cleanUpFallImpactPresentation()
         enterGameOver(playerEndState: .falling)
