@@ -22,7 +22,7 @@ final class MenuScreen: SKNode {
     // MARK: - UI Nodes
 
     private let backgroundNode =
-    SKSpriteNode(imageNamed: "BACKGROUND")
+    SKSpriteNode(imageNamed: "BG HOME")
 
     private let logoNode =
     SKSpriteNode(imageNamed: "LOGO")
@@ -73,15 +73,43 @@ private extension MenuScreen {
 
         addChild(backgroundNode)
 
-        // Dark Overlay
-        let dim = SKShapeNode(rectOf: sceneSize)
+        // Radial Gradient Overlay (Berada di belakang UI)
+        let gradientNode = SKSpriteNode(color: .clear, size: sceneSize)
+        gradientNode.zPosition = -1 // Di atas backgroundNode tapi di belakang logo/tombol
 
-        dim.fillColor = .black
-        dim.strokeColor = .clear
-        dim.alpha = 0.35
-        dim.zPosition = -1
+        UIGraphicsBeginImageContext(sceneSize)
+        guard let context = UIGraphicsGetCurrentContext() else { return }
 
-        addChild(dim)
+        let colors = [
+            ColorHelper.fromHex(0x49270E, alpha: 0.3).cgColor,  // Center: Warm Brown Tint
+            ColorHelper.fromHex(0x3D200B, alpha: 1.5).cgColor,  // Mid: Rich Chocolate
+            ColorHelper.fromHex(0x2b170c, alpha: 0.6).cgColor // Edges: Deep Warm Brown (not black)
+        ] as CFArray
+        
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        // Transisi yang lebih seimbang di seluruh layar
+        let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0.0, 0.5, 1.0])
+        
+        let center = CGPoint(x: sceneSize.width / 2, y: sceneSize.height / 2)
+        let radius = max(sceneSize.width, sceneSize.height) * 1.0 // Radius penuh untuk transisi smooth
+        
+        context.drawRadialGradient(
+            gradient!,
+            startCenter: center,
+            startRadius: 0,
+            endCenter: center,
+            endRadius: radius,
+            options: .drawsAfterEndLocation
+        )
+        
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        if let image = image {
+            gradientNode.texture = SKTexture(image: image)
+        }
+        
+        addChild(gradientNode)
     }
 
     func setupLogo(sceneSize: CGSize) {

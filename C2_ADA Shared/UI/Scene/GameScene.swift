@@ -48,6 +48,7 @@ final class GameScene: SKScene {
     /// start position.
     let worldNode = SKNode()
     private let targetReticleNode = SKShapeNode()
+    let targetTutorialHighlightNode = SKNode()
     let gameplayNode = SKNode()
     var spawnSystem: SpawnSystem?
 
@@ -128,6 +129,14 @@ final class GameScene: SKScene {
 
     override func update(_ currentTime: TimeInterval) {
         let deltaTime = makeDeltaTime(from: currentTime)
+        
+        // Selalu periksa visibilitas highlight tutorial meskipun sedang pause atau game over
+        if !isShowingLatchTutorial {
+            if targetTutorialHighlightNode.alpha > 0 {
+                targetTutorialHighlightNode.alpha = 0
+            }
+        }
+        
         guard gameState == .playing else { return }
 
         spawnSystem?.update(deltaTime: deltaTime)
@@ -298,6 +307,8 @@ extension GameScene {
         setUpHUD()
         inputSystem.reset()
         
+        targetTutorialHighlightNode.alpha = 0 // Pastikan sembunyi saat reset
+        
         self.tutorialScreen = nil
         self.tutorialScreen2 = nil
         self.tutorialScreen3 = nil
@@ -305,6 +316,9 @@ extension GameScene {
         self.hasShownSteerTutorial = false
         self.hasShownReleaseTutorial = false
         self.hasShownLatchTutorial = false
+        self.isShowingSteerTutorial = false
+        self.isShowingReleaseTutorial = false
+        self.isShowingLatchTutorial = false
 
         if skipsMenu {
             showStartOverlay()
@@ -330,13 +344,30 @@ private extension GameScene {
         let ringRadius = configuration.latchDistance
         targetReticleNode.path = CGPath(ellipseIn: CGRect(x: -ringRadius, y: -ringRadius, width: ringRadius*2, height: ringRadius*2), transform: nil)
         targetReticleNode.zPosition = -1
-        targetReticleNode.strokeColor = SKColor(red: 1.00, green: 0.86, blue: 0.24, alpha: 1.0)
+        targetReticleNode.strokeColor = ColorHelper.fromHex(0xF6A74C) // Orange like Tutorial 1
         targetReticleNode.lineWidth = 4
         targetReticleNode.alpha = 0
         
         targetReticleNode.xScale = 1.0
         targetReticleNode.yScale = 1.0
         worldNode.addChild(targetReticleNode)
+
+        // MARK: Target Tutorial Highlight Setup
+        let targetRadius: CGFloat = 65
+        let targetDotsCount = 20
+        targetTutorialHighlightNode.removeAllChildren()
+        for i in 0..<targetDotsCount {
+            let angle = CGFloat(i) * .pi * 2 / CGFloat(targetDotsCount)
+            let dot = SKShapeNode(circleOfRadius: 3.0)
+            dot.fillColor = ColorHelper.fromHex(0xF6A74C) // Orange like Tutorial 1
+            dot.strokeColor = .clear
+            dot.position = CGPoint(x: cos(angle) * targetRadius, y: sin(angle) * targetRadius)
+            targetTutorialHighlightNode.addChild(dot)
+        }
+        // Muncul di atas semua (termasuk vehicle dan dim tutorial)
+        targetTutorialHighlightNode.zPosition = RenderLayer.dimmed + 10
+        targetTutorialHighlightNode.alpha = 0
+        worldNode.addChild(targetTutorialHighlightNode)
     }
 
     func setUpSpawnSystem() {
@@ -408,26 +439,71 @@ private extension GameScene {
 
     func updateJumpingPlayer(_ deltaTime: TimeInterval) {
         guard let playerEntity else { return }
+
         if playerState == .jumping {
             let launchResult = launchSystem?.update(player: playerEntity, deltaTime: deltaTime)
             let allVehicles = spawnSystem?.vehicleEntities ?? []
             let activeVehicles = allVehicles.filter { $0 !== currentVehicleEntity }
-            let bestTarget = latchSystem?.getBestTarget(player: playerEntity, vehicles: activeVehicles)
             
+            // Mencari target: Dalam Tutorial 4, kita tunjukkan mobil terdekat di depan meskipun belum dalam jangkauan latch
+            var bestTarget: VehicleEntity?
+            if isShowingLatchTutorial {
+                bestTarget = activeVehicles
+                    .filter { $0.node.position.y > playerEntity.node.position.y }
+                    .min(by: { 
+                        let d1 = hypot($0.node.position.x - playerEntity.node.position.x, $0.node.position.y - playerEntity.node.position.y)
+                        let d2 = hypot($1.node.position.x - playerEntity.node.position.x, $1.node.position.y - playerEntity.node.position.y)
+                        return d1 < d2
+                    })
+            } else {
+                bestTarget = latchSystem?.getBestTarget(player: playerEntity, vehicles: activeVehicles)
+            }
+
             if let target = bestTarget {
+                if isShowingLatchTutorial {
+                    // Offset disesuaikan agar lebih maju dan pas di tengah mobil
+                    targetTutorialHighlightNode.position = CGPoint(
+                        x: target.node.position.x + -2,
+                        y: target.node.position.y + 35,
+                    )
+                    
+                    if targetTutorialHighlightNode.alpha == 0 {
+                        targetTutorialHighlightNode.alpha = 1.0 // Langsung muncul 100%
+                    }
+                } else {
+                    // Pastikan highlight tutorial sembunyi jika bukan Tutorial 4
+                    if targetTutorialHighlightNode.alpha > 0 {
+                        targetTutorialHighlightNode.alpha = 0
+                    }
+                }
+
                 // Jangan timpa jika sedang dalam tutorial latch (yang lebih lambat)
                 if !isShowingLatchTutorial {
                     targetTimeScale = 0.6
+                    
+                    // Hanya tampilkan reticle kuning standar jika BUKAN tutorial 4
+                    targetReticleNode.position = CGPoint(x: target.node.position.x, y: target.node.position.y + 40)
+                    if targetReticleNode.alpha == 0 { targetReticleNode.run(SKAction.fadeAlpha(to: 1.0, duration: 0.15)) }
+                } else {
+                    // Pastikan reticle kuning sembunyi saat tutorial 4
+                    if targetReticleNode.alpha > 0 { targetReticleNode.alpha = 0 }
                 }
-                targetReticleNode.position = CGPoint(x: target.node.position.x, y: target.node.position.y + 40)
-                if targetReticleNode.alpha == 0 { targetReticleNode.run(SKAction.fadeAlpha(to: 1.0, duration: 0.15)) }
             } else {
+                if targetTutorialHighlightNode.alpha > 0 {
+                    targetTutorialHighlightNode.alpha = 0
+                }
+
                 if !isShowingLatchTutorial {
                     targetTimeScale = 1.0
                 }
+                
                 if targetReticleNode.alpha > 0 { targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.15)) }
             }
             if launchResult == .fell { enterFallGameOver() }
+        } else {
+            if targetTutorialHighlightNode.alpha > 0 {
+                targetTutorialHighlightNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.15))
+            }
         }
     }
 
@@ -500,6 +576,7 @@ private extension GameScene {
             let activeVehicles = allVehicles.filter { $0 !== currentVehicleEntity }
             if let latchedVehicle = latchSystem?.attemptLatch(player: playerEntity, onto: activeVehicles) {
                 completeLatch(on: latchedVehicle, startLocation: startLocation)
+                
             } else {
                 let failedLatchFallDistance = configuration.vehicleSize.height * 0.55
                 playerEntity.component(ofType: LaunchComponent.self)?.beginFailedLatchFall(from: playerEntity.node.position, direction: configuration.jumpForwardUnitVector, distance: failedLatchFallDistance, duration: configuration.playerFallSettleDuration)
@@ -569,6 +646,20 @@ private extension GameScene {
     
     func completeLatch(on vehicle: VehicleEntity, startLocation: CGPoint? = nil) {
         guard let playerEntity else { return }
+        
+        // ===== Tutorial 4 Cleanup =====
+        isShowingLatchTutorial = false
+        hasShownLatchTutorial = true
+
+        tutorialScreen4?.hide() // TutorialScreen4 uses hide()
+        tutorialScreen4 = nil
+
+        targetTutorialHighlightNode.removeAllActions()
+        targetTutorialHighlightNode.alpha = 0
+
+        targetReticleNode.removeAllActions()
+        targetReticleNode.alpha = 0
+        
         playerEntity.cancelJumpVisual()
         targetTimeScale = 1.0
         targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.1))

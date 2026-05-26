@@ -122,6 +122,14 @@ extension GameScene {
         screen.show(in: self)
         self.tutorialScreen4 = screen
 
+        // Animasi pulse untuk target highlight (Tutorial 4)
+        targetTutorialHighlightNode.removeAllActions()
+        let pulseUp = SKAction.scale(to: 1.1, duration: 0.4)
+        let pulseDown = SKAction.scale(to: 1.0, duration: 0.4)
+        let pulse = SKAction.sequence([pulseUp, pulseDown])
+        
+        targetTutorialHighlightNode.run(SKAction.repeatForever(pulse))
+
         // SLOW MOTION (Disesuaikan agar tidak terlalu lambat)
         targetTimeScale = 0.4
         currentTimeScale = 0.4
