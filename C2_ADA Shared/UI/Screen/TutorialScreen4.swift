@@ -19,10 +19,13 @@ final class TutorialScreen4: SKNode {
     private let pressHoldLabel = SKLabelNode(
         fontNamed: GameConfiguration.standard.primaryFontName
     )
+    
+    private weak var targetNode: SKNode?
 
     // MARK: - Initialization
 
-    init(sceneSize: CGSize) {
+    init(sceneSize: CGSize, targetNode: SKNode? = nil) {
+        self.targetNode = targetNode
         super.init()
         name = "tutorialScreen4"
         zPosition = RenderLayer.dimmed
@@ -42,27 +45,48 @@ final class TutorialScreen4: SKNode {
 
 private extension TutorialScreen4 {
     func setupDim(sceneSize: CGSize) {
-        dimNode.path = CGPath(
-            rect: CGRect(
-                origin: CGPoint(
-                    x: -sceneSize.width / 2,
-                    y: -sceneSize.height / 2
-                ),
-                size: sceneSize
-            ),
-            transform: nil
-        )
-
         dimNode.strokeColor = .clear
         dimNode.fillColor = ColorHelper.fromHex(0x49270E)
         dimNode.alpha = 0.70
-        
+
         addChild(dimNode)
+        updateDimPath(sceneSize: sceneSize)
+    }
+
+    func updateDimPath(sceneSize: CGSize) {
+        let screenRect = CGRect(x: -sceneSize.width / 2, y: -sceneSize.height / 2, width: sceneSize.width, height: sceneSize.height)
+        let path = UIBezierPath(rect: screenRect)
+
+        let holePos: CGPoint
+        if let target = targetNode, let parent = target.parent, let scene = scene {
+            // Convert target position to scene space
+            let scenePos = scene.convert(target.position, from: parent)
+            // Match the offset in GameScene for targetTutorialHighlightNode
+            holePos = CGPoint(
+                x: scenePos.x - 2,
+                y: scenePos.y + 35
+            )
+        } else {
+            holePos = .zero
+        }
+
+        let radius: CGFloat = 85
+        let holeRect = CGRect(
+            x: holePos.x - radius,
+            y: holePos.y - radius,
+            width: radius * 2,
+            height: radius * 2
+        )
+
+        let holePath = UIBezierPath(ovalIn: holeRect)
+        path.append(holePath.reversing())
+
+        dimNode.path = path.cgPath
     }
 
     func setupLabel() {
         pressHoldLabel.text = "PRESS & HOLD TO LATCH"
-        pressHoldLabel.fontSize = 28 // Ukuran diperkecil
+        pressHoldLabel.fontSize = 28
         pressHoldLabel.fontColor = ColorHelper.fromHex(0xF6A74C)
         pressHoldLabel.horizontalAlignmentMode = .center
         pressHoldLabel.verticalAlignmentMode = .center
@@ -105,5 +129,11 @@ extension TutorialScreen4 {
     func beginHold() {
         hide()
         onHoldStarted?()
+    }
+    
+    func update() {
+        if let scene = scene {
+            updateDimPath(sceneSize: scene.size)
+        }
     }
 }

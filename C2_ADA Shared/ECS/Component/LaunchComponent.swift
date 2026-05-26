@@ -34,8 +34,8 @@ final class LaunchComponent: GKComponent {
     private var launchMode: LaunchMode = .forwardJump
     private var linearStartPosition: CGPoint = .zero
     private var linearEndPosition: CGPoint = .zero
-    private var linearElapsedTime: TimeInterval = 0
-    private var linearDuration: TimeInterval = 0
+    private(set) var linearElapsedTime: TimeInterval = 0
+    private(set) var linearDuration: TimeInterval = 0
 
     // MARK: - Launch Lifecycle
 

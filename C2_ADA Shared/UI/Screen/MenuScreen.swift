@@ -25,7 +25,7 @@ final class MenuScreen: SKNode {
     // MARK: - UI Nodes
 
     private let backgroundNode =
-    SKSpriteNode(imageNamed: "BACKGROUND")
+    SKSpriteNode(imageNamed: "BG HOME")
 
     private let logoNode =
     SKSpriteNode(imageNamed: "LOGO")
@@ -79,15 +79,40 @@ private extension MenuScreen {
 
         addChild(backgroundNode)
 
-        // Dark Overlay
-        let dim = SKShapeNode(rectOf: sceneSize)
-
-        dim.fillColor = .black
-        dim.strokeColor = .clear
-        dim.alpha = 0.35
-        dim.zPosition = -1
-
-        addChild(dim)
+        // Radial Gradient Overlay
+        let gradientNode = SKSpriteNode(color: .clear, size: sceneSize)
+        gradientNode.zPosition = -1 
+        
+        UIGraphicsBeginImageContextWithOptions(sceneSize, false, 1.0)
+        guard let context = UIGraphicsGetCurrentContext() else { return }
+        
+        let colors = [
+            ColorHelper.fromHex(0x49270E, alpha: 0.3).cgColor,
+            ColorHelper.fromHex(0x3D200B, alpha: 1.5).cgColor,
+            ColorHelper.fromHex(0x2b170c, alpha: 0.6).cgColor
+        ] as CFArray
+        
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0.0, 0.5, 1.0])
+        
+        let center = CGPoint(x: sceneSize.width / 2, y: sceneSize.height / 2)
+        let radius = max(sceneSize.width, sceneSize.height) * 1.0
+        
+        context.drawRadialGradient(
+            gradient!,
+            startCenter: center,
+            startRadius: 0,
+            endCenter: center,
+            endRadius: radius,
+            options: .drawsAfterEndLocation
+        )
+        
+        if let image = UIGraphicsGetImageFromCurrentImageContext() {
+            gradientNode.texture = SKTexture(image: image)
+        }
+        UIGraphicsEndImageContext()
+        
+        addChild(gradientNode)
     }
 
     func setupLogo(sceneSize: CGSize) {

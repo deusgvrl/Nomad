@@ -32,6 +32,7 @@ extension GameScene {
         gameState = .gameOver
         playerState = playerEndState
         
+        dismissAllTutorials()
         playerEntity?.playDeadVisual()
 
         // MARK: Game Over Haptics Stop
