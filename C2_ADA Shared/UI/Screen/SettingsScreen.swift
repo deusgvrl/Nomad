@@ -11,7 +11,7 @@ final class SettingsScreen: SKNode {
 
     // MARK: - Callback
 
-    var onMusicChanged: ((Bool) -> Void)?
+    var onSoundChanged: ((Bool) -> Void)?
     var onHapticsChanged: ((Bool) -> Void)?
     var onClosed: (() -> Void)?
 
@@ -22,6 +22,12 @@ final class SettingsScreen: SKNode {
     /// Settings owns the Haptics toggle, so it also mirrors the saved haptics
     /// preference and forwards changes back into the controller.
     private let hapticsController: HapticsController
+
+    /// Shared audio wrapper used to persist and immediately apply Sound changes.
+    ///
+    /// The existing first toggle now controls all gameplay audio because this
+    /// feature adds effects and vehicle loops rather than background music only.
+    private let audioController: AudioController
 
     // MARK: - Overlay Nodes
 
@@ -38,7 +44,7 @@ final class SettingsScreen: SKNode {
 
     // MARK: - Labels
 
-    private let musicLabel = SKLabelNode(
+    private let soundLabel = SKLabelNode(
         fontNamed: GameConfiguration.standard.secondaryFontName
     )
 
@@ -48,7 +54,7 @@ final class SettingsScreen: SKNode {
 
     // MARK: - Toggles
 
-    private let musicToggle = ToggleSwitchNode()
+    private let soundToggle = ToggleSwitchNode()
 
     private let hapticsToggle = ToggleSwitchNode()
 
@@ -56,9 +62,12 @@ final class SettingsScreen: SKNode {
 
     init(
         sceneSize: CGSize,
-        hapticsController: HapticsController = .shared, dimAlpha: CGFloat = 0.85
+        hapticsController: HapticsController = .shared,
+        audioController: AudioController = .shared,
+        dimAlpha: CGFloat = 0.85
     ) {
         self.hapticsController = hapticsController
+        self.audioController = audioController
         super.init()
 
         name = "settingsScreen"
@@ -156,26 +165,26 @@ private extension SettingsScreen {
         let labelX: CGFloat = -115
         let toggleX: CGFloat = 75
 
-        // musicY & hapticsY: (+) naik ke atas, (-) turun ke bawah
-        let musicY: CGFloat = 23
+        // soundY & hapticsY: (+) naik ke atas, (-) turun ke bawah
+        let soundY: CGFloat = 23
         let hapticsY: CGFloat = -23        
         // Skala pengecil untuk toggle (lebih kecil lagi)
         let toggleScale: CGFloat = 0.50
 
-        // MARK: Music Label
-        musicLabel.text = "Music"
-        musicLabel.fontSize = 24
-        musicLabel.fontColor = labelColor
-        musicLabel.horizontalAlignmentMode = .left
-        musicLabel.position = CGPoint(x: labelX, y: musicY)
-        musicLabel.zPosition = 1
-        contentNode.addChild(musicLabel)
+        // MARK: Sound Label
+        soundLabel.text = "Sound"
+        soundLabel.fontSize = 24
+        soundLabel.fontColor = labelColor
+        soundLabel.horizontalAlignmentMode = .left
+        soundLabel.position = CGPoint(x: labelX, y: soundY)
+        soundLabel.zPosition = 1
+        contentNode.addChild(soundLabel)
 
-        // MARK: Music Toggle
-        musicToggle.position = CGPoint(x: toggleX, y: musicY + 8)
-        musicToggle.zPosition = 20
-        musicToggle.setScale(toggleScale)
-        contentNode.addChild(musicToggle)
+        // MARK: Sound Toggle
+        soundToggle.position = CGPoint(x: toggleX, y: soundY + 8)
+        soundToggle.zPosition = 20
+        soundToggle.setScale(toggleScale)
+        contentNode.addChild(soundToggle)
 
         // MARK: Haptics Label
         hapticsLabel.text = "Haptics"
@@ -195,11 +204,12 @@ private extension SettingsScreen {
 
     func setupCallbacks() {
 
-        musicToggle.onToggleChanged = {
+        soundToggle.onToggleChanged = {
             [weak self] isOn in
 
             self?.hapticsController.playLightButtonTap()
-            self?.onMusicChanged?(isOn)
+            self?.audioController.setAudioEnabled(isOn)
+            self?.onSoundChanged?(isOn)
         }
 
         hapticsToggle.onToggleChanged = {
@@ -220,6 +230,14 @@ private extension SettingsScreen {
     /// Mirrors persisted settings into the visible toggles without firing their
     /// callbacks during setup.
     func syncStoredPreferences() {
+        // MARK: Saved Sound State
+        // Audio can be muted while a scene is not playing. Building Settings
+        // from the stored value keeps menu and pause overlays consistent.
+        soundToggle.setIsOn(
+            audioController.isAudioEnabled,
+            animated: false
+        )
+
         hapticsToggle.setIsOn(
             hapticsController.isHapticsEnabled,
             animated: false

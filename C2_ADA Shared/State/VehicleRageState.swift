@@ -89,6 +89,12 @@ class VehicleHittingState: GKState {
         // Hitting is the dangerous rage phase, so it starts harder than
         // Popping. The update loop continues ramping the pulse until Jump.
         component?.updateRageHaptics(phase: .hitting, progress: 0)
+
+        // MARK: Hitting Audio Loop Start
+        // The requested hitting MP3 belongs only to this final rage phase.
+        // Starting through the controller guarantees repeated state updates do
+        // not add duplicate looping nodes.
+        component?.startRageAudio()
     }
     
     override func update(deltaTime seconds: TimeInterval) {
@@ -138,6 +144,11 @@ class VehicleJumpState: GKState {
         // GameScene to detach the player so no rage haptic leaks into the jump.
         component?.stopRageHaptics()
 
+        // MARK: Hitting Audio Loop Stop
+        // Forced launch ends the audible warning at the same instant the
+        // player leaves the angry vehicle.
+        component?.stopRageAudio()
+
         // Memanggil sinyal lompat paksa ke GameScene melalui komponen
         component?.onJumpRequested?()
     }
@@ -183,6 +194,11 @@ class VehicleCalmState: GKState {
         // Calm state intentionally has no haptic output. Entering Calm also
         // clears any pulse timing from the previous vehicle rage cycle.
         component?.stopRageHaptics()
+
+        // MARK: Calm Audio Reset
+        // A newly attached or reset vehicle must begin without a stale hitting
+        // loop from its previous ownership cycle.
+        component?.stopRageAudio()
     }
     
     // Function to start the timer
