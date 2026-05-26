@@ -151,9 +151,9 @@ final class GameScene: SKScene {
         tutorialScreen3?.update()
         
         // TRIGGER TUTORIAL 2 SAAT JARAK MENCAPAI 40m
-        // Hanya muncul jika highscore < 400m
+        // Hanya muncul jika highscore < 250m
         let highscore = UserDefaults.standard.integer(forKey: "Nomad.DistanceScoreSystem.highScoreMeters")
-        if highscore < 400 && !hasShownSteerTutorial && distanceScoreSystem.currentDistanceMeters >= 40 {
+        if highscore < 250 && !hasShownSteerTutorial && distanceScoreSystem.currentDistanceMeters >= 40 {
             showSteerTutorial()
         }
         
@@ -706,7 +706,7 @@ private extension GameScene {
     
     func checkReleaseTutorialTrigger() {
         let highscore = UserDefaults.standard.integer(forKey: "Nomad.DistanceScoreSystem.highScoreMeters")
-        guard highscore < 400, !hasShownReleaseTutorial, playerState == .riding, let vehicle = currentVehicleEntity else { return }
+        guard highscore < 250, !hasShownReleaseTutorial, playerState == .riding, let vehicle = currentVehicleEntity else { return }
         
         // 1. Check Rage 2 (HittingState)
         if let rageComponent = vehicle.component(ofType: VehicleRageComponent.self) {

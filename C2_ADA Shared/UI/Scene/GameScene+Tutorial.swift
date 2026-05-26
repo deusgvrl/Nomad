@@ -14,7 +14,7 @@ extension GameScene {
     func showStartOverlay() {
         let highscore = UserDefaults.standard.integer(forKey: "Nomad.DistanceScoreSystem.highScoreMeters")
         
-        if highscore < 400 {
+        if highscore < 250 {
             let screen = TutorialScreen(sceneSize: size)
             screen.onHoldStarted = { [weak self] in
                 guard let self else { return }
@@ -95,9 +95,9 @@ extension GameScene {
     }
 
     func showLatchTutorial() {
-        // Hanya muncul jika highscore < 400m
+        // Hanya muncul jika highscore < 250m
         let highscore = UserDefaults.standard.integer(forKey: "Nomad.DistanceScoreSystem.highScoreMeters")
-        guard highscore < 400 else {
+        guard highscore < 250 else {
             self.targetTimeScale = 1.0
             self.currentTimeScale = 1.0
             self.speed = 1.0
