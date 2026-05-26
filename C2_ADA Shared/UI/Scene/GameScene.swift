@@ -163,7 +163,7 @@ final class GameScene: SKScene {
                 }
                 lastFrameVehiclePosition = currentPos
 
-                movementSystem.updateLerp(vehicle: vehicle, deltaTime: deltaTime)
+                movementSystem.updateLerp(vehicle: vehicle, deltaTime: timing.worldDelta)
                 player.place(on: vehicle)
                 checkReleaseTutorialTrigger()
             }
