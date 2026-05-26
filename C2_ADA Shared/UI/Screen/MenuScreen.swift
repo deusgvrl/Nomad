@@ -79,25 +79,24 @@ private extension MenuScreen {
 
         addChild(backgroundNode)
 
-        // Radial Gradient Overlay (Berada di belakang UI)
+        // Radial Gradient Overlay
         let gradientNode = SKSpriteNode(color: .clear, size: sceneSize)
-        gradientNode.zPosition = -1 // Di atas backgroundNode tapi di belakang logo/tombol
-
-        UIGraphicsBeginImageContext(sceneSize)
+        gradientNode.zPosition = -1 
+        
+        UIGraphicsBeginImageContextWithOptions(sceneSize, false, 1.0)
         guard let context = UIGraphicsGetCurrentContext() else { return }
-
+        
         let colors = [
-            ColorHelper.fromHex(0x49270E, alpha: 0.3).cgColor,  // Center: Warm Brown Tint
-            ColorHelper.fromHex(0x3D200B, alpha: 1.5).cgColor,  // Mid: Rich Chocolate
-            ColorHelper.fromHex(0x2b170c, alpha: 0.6).cgColor // Edges: Deep Warm Brown (not black)
+            ColorHelper.fromHex(0x49270E, alpha: 0.3).cgColor,
+            ColorHelper.fromHex(0x3D200B, alpha: 1.5).cgColor,
+            ColorHelper.fromHex(0x2b170c, alpha: 0.6).cgColor
         ] as CFArray
         
         let colorSpace = CGColorSpaceCreateDeviceRGB()
-        // Transisi yang lebih seimbang di seluruh layar
         let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0.0, 0.5, 1.0])
         
         let center = CGPoint(x: sceneSize.width / 2, y: sceneSize.height / 2)
-        let radius = max(sceneSize.width, sceneSize.height) * 1.0 // Radius penuh untuk transisi smooth
+        let radius = max(sceneSize.width, sceneSize.height) * 1.0
         
         context.drawRadialGradient(
             gradient!,
@@ -108,12 +107,10 @@ private extension MenuScreen {
             options: .drawsAfterEndLocation
         )
         
-        let image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        if let image = image {
+        if let image = UIGraphicsGetImageFromCurrentImageContext() {
             gradientNode.texture = SKTexture(image: image)
         }
+        UIGraphicsEndImageContext()
         
         addChild(gradientNode)
     }
