@@ -127,4 +127,34 @@ extension GameScene {
         currentTimeScale = 0.4
         self.speed = 0.10
     }
+
+    func dismissAllTutorials() {
+        if let tutorialScreen {
+            tutorialScreen.hide()
+            self.tutorialScreen = nil
+        }
+        
+        if let tutorialScreen2 {
+            tutorialScreen2.dismiss() // TutorialScreen2 HAS dismiss()
+            self.tutorialScreen2 = nil
+            self.isShowingSteerTutorial = false
+        }
+        
+        if let tutorialScreen3 {
+            tutorialScreen3.hide()
+            self.tutorialScreen3 = nil
+            self.isShowingReleaseTutorial = false
+        }
+        
+        if let tutorialScreen4 {
+            tutorialScreen4.hide()
+            self.tutorialScreen4 = nil
+            self.isShowingLatchTutorial = false
+        }
+        
+        // Reset speed to normal
+        self.targetTimeScale = 1.0
+        self.currentTimeScale = 1.0
+        self.speed = 1.0
+    }
 }

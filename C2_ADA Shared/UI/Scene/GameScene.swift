@@ -133,6 +133,7 @@ final class GameScene: SKScene {
         spawnSystem?.update(deltaTime: deltaTime)
         updateJumpingPlayer(deltaTime)
         updateDistanceScore(deltaTime)
+        
         tutorialScreen3?.update()
         
         // TRIGGER TUTORIAL 2 SAAT JARAK MENCAPAI 40m
@@ -140,6 +141,17 @@ final class GameScene: SKScene {
         let highscore = UserDefaults.standard.integer(forKey: "Nomad.DistanceScoreSystem.highScoreMeters")
         if highscore < 400 && !hasShownSteerTutorial && distanceScoreSystem.currentDistanceMeters >= 40 {
             showSteerTutorial()
+        }
+        
+        // DISMISS TUTORIAL 2 SAAT JARAK MENCAPAI 60m
+        if isShowingSteerTutorial && distanceScoreSystem.currentDistanceMeters >= 60 {
+            tutorialScreen2?.dismiss()
+            self.tutorialScreen2 = nil
+            self.isShowingSteerTutorial = false
+            
+            targetTimeScale = 1.0
+            currentTimeScale = 1.0
+            self.speed = 1.0
         }
         
         if let vehicle = currentVehicleEntity, let player = playerEntity {
@@ -199,10 +211,10 @@ final class GameScene: SKScene {
             return
         }
         
-        if isShowingSteerTutorial {
-            tutorialInitialTouchLocation = touch.location(in: self)
-            return
-        }
+//        if isShowingSteerTutorial {
+//            tutorialInitialTouchLocation = touch.location(in: self)
+//            // Biarkan input lanjut ke gameplay agar player bisa mencoba steer saat tutorial muncul
+//        }
 
         if let dimmedStartScreen {
             dimmedStartScreen.beginHold()
@@ -233,38 +245,6 @@ final class GameScene: SKScene {
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         
-        // DISMISS TUTORIAL 2 SAAT DRAG
-        if let tutorialScreen2, isShowingSteerTutorial {
-
-            let currentLocation = touch.location(in: self)
-
-            // pertama kali move saat tutorial muncul
-            if tutorialInitialTouchLocation == nil {
-                tutorialInitialTouchLocation = currentLocation
-                return
-            }
-
-            let dx = currentLocation.x - tutorialInitialTouchLocation!.x
-            let dy = currentLocation.y - tutorialInitialTouchLocation!.y
-
-            let distance = sqrt(dx * dx + dy * dy)
-
-            // hanya dismiss jika benar-benar drag
-            if distance > 15 {
-
-                tutorialScreen2.dismiss()
-                self.tutorialScreen2 = nil
-
-                targetTimeScale = 1.0
-                currentTimeScale = 1.0
-                self.speed = 1.0
-
-                isShowingSteerTutorial = false
-            }
-
-            return
-        }
-
         guard gameState != .gameOver, gameState != .paused else { return }
         handle(inputSystem.move(to: touch.location(in: gameplayNode)))
     }
