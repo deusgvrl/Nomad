@@ -47,7 +47,7 @@ final class GameScene: SKScene {
     /// merge dev's treadmill setup without shifting the movement prototype's
     /// start position.
     let worldNode = SKNode()
-    private let targetReticleNode = SKShapeNode()
+    private let targetReticleNode = SKSpriteNode()
     let gameplayNode = SKNode()
     var spawnSystem: SpawnSystem?
 
@@ -127,12 +127,12 @@ final class GameScene: SKScene {
     }
 
     override func update(_ currentTime: TimeInterval) {
-        let deltaTime = makeDeltaTime(from: currentTime)
+        let timing = makeDeltaTime(from: currentTime)
         guard gameState == .playing else { return }
 
-        spawnSystem?.update(deltaTime: deltaTime)
-        updateJumpingPlayer(deltaTime)
-        updateDistanceScore(deltaTime)
+        spawnSystem?.update(deltaTime: timing.worldDelta)
+        updateJumpingPlayer(timing.playerDelta)
+        updateDistanceScore(timing.worldDelta)
         tutorialScreen3?.update()
         
         // TRIGGER TUTORIAL 2 SAAT JARAK MENCAPAI 40m
@@ -155,7 +155,7 @@ final class GameScene: SKScene {
                         player.steerVisual(isLeft: false)
                         steerIdleTimer = 0.2
                     } else {
-                        steerIdleTimer -= deltaTime
+                        steerIdleTimer -= timing.worldDelta
                         if steerIdleTimer <= 0 {
                             player.idleVisual()
                         }
@@ -169,13 +169,11 @@ final class GameScene: SKScene {
             }
 
             if updateCollisionGameOverIfNeeded(for: vehicle) { return }
-            vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: deltaTime)
+            
+            // Update rage State
+            vehicle.component(ofType: VehicleRageComponent.self)?.update(deltaTime: timing.worldDelta)
         }
 
-        if playerState == .riding, let vehicle = currentVehicleEntity, let player = playerEntity {
-            player.place(on: vehicle)
-            if updateCollisionGameOverIfNeeded(for: vehicle) { return }
-        }
     }
 
     // MARK: - Touch Input
@@ -347,12 +345,14 @@ private extension GameScene {
         gameplayNode.zPosition = RenderLayer.vehicle
         addChild(gameplayNode)
         
-        let ringRadius = configuration.latchDistance
-        targetReticleNode.path = CGPath(ellipseIn: CGRect(x: -ringRadius, y: -ringRadius, width: ringRadius*2, height: ringRadius*2), transform: nil)
+//        let ringDiameter = configuration.latchDistance * 2
+//        let path = CGPath(ellipseIn: CGRect(x: -ringDiameter/2, y: -ringDiameter/2, width: ringDiameter, height: ringDiameter), transform: nil)
+//        targetReticleNode.path = path
+        targetReticleNode.texture = SKTexture(imageNamed: NomadAsset.reticle.rawValue)
+        
+        let ringDiameter = configuration.latchDistance * 2.5
+        targetReticleNode.size = CGSize(width: ringDiameter, height: ringDiameter)
         targetReticleNode.zPosition = -1
-        targetReticleNode.strokeColor = SKColor(red: 1.00, green: 0.86, blue: 0.24, alpha: 1.0)
-        targetReticleNode.lineWidth = 4
-        targetReticleNode.alpha = 0
         
         targetReticleNode.xScale = 1.0
         targetReticleNode.yScale = 1.0
@@ -447,20 +447,47 @@ private extension GameScene {
                 }
                 if targetReticleNode.alpha > 0 { targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.15)) }
             }
-            if launchResult == .fell { enterFallGameOver() }
+            
+            if currentTimeScale < 1.0 {
+                playerEntity.node.speed = 0.5
+            } else {
+                playerEntity.node.speed = 1.0
+            }
+            
+            if launchResult == .fell {
+                enterFallGameOver()
+            }
         }
     }
 
-    func makeDeltaTime(from currentTime: TimeInterval) -> TimeInterval {
+    // MARK: - Delta Time
+    struct FrameTiming {
+        let worldDelta: TimeInterval
+        let playerDelta: TimeInterval
+    }
+
+    /// Caps delta time so a simulator pause does not create a giant jump update.
+    func makeDeltaTime(from currentTime: TimeInterval) -> FrameTiming {
         defer { lastUpdateTime = currentTime }
-        guard lastUpdateTime > 0 else { return 0 }
+
+        guard lastUpdateTime > 0 else { return FrameTiming(worldDelta: 0, playerDelta: 0) }
         let rawDelta = min(currentTime - lastUpdateTime, configuration.maximumDeltaTime)
         let scaleDiff = targetTimeScale - currentTimeScale
-        if abs(scaleDiff) < 0.01 { currentTimeScale = targetTimeScale }
-        else { currentTimeScale += scaleDiff * CGFloat(rawDelta * 4.0) }
+        if abs(scaleDiff) < 0.01 {
+            currentTimeScale = targetTimeScale
+        } else {
+            currentTimeScale += scaleDiff * CGFloat(rawDelta * 2.75)
+        }
+        
         let dilatedDelta = rawDelta * TimeInterval(currentTimeScale)
         self.speed = currentTimeScale
-        return dilatedDelta
+        
+        var playerPhysicsDelta = dilatedDelta
+        
+        if currentTimeScale < 1.0 {
+            playerPhysicsDelta = dilatedDelta * 0.5
+        }
+        return FrameTiming(worldDelta: dilatedDelta, playerDelta: playerPhysicsDelta)
     }
 }
 

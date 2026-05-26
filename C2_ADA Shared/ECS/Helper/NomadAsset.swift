@@ -85,4 +85,8 @@ enum NomadAsset: String {
     // MARK: Game HUD UI
 
     case pauseButton = "PAUSE BUTTON"
+    
+    // MARK: Vehicle Reticle
+    
+    case reticle = "VEHICLE RETICLE"
 }
