@@ -76,6 +76,8 @@ final class GameScene: SKScene {
     var activeSettingsSource: SettingsSource?
     var currentTimeScale: CGFloat = 1.0
     var targetTimeScale: CGFloat = 1.0
+    var lastFrameVehiclePosition: CGPoint?
+    var steerIdleTimer: TimeInterval = 0
 
     // MARK: - Scene Factory
 
@@ -142,6 +144,25 @@ final class GameScene: SKScene {
         
         if let vehicle = currentVehicleEntity, let player = playerEntity {
             if playerState == .riding {
+                let currentPos = vehicle.node.position
+                if let lastPos = lastFrameVehiclePosition {
+                    let deltaX = currentPos.x - lastPos.x
+                    
+                    if deltaX < -1.3 {
+                        player.steerVisual(isLeft: true)
+                        steerIdleTimer = 0.2
+                    } else if deltaX > 1.3 {
+                        player.steerVisual(isLeft: false)
+                        steerIdleTimer = 0.2
+                    } else {
+                        steerIdleTimer -= deltaTime
+                        if steerIdleTimer <= 0 {
+                            player.idleVisual()
+                        }
+                    }
+                }
+                lastFrameVehiclePosition = currentPos
+
                 movementSystem.updateLerp(vehicle: vehicle, deltaTime: deltaTime)
                 player.place(on: vehicle)
                 checkReleaseTutorialTrigger()
@@ -290,6 +311,7 @@ extension GameScene {
         gameState = .waitingToStart
         playerState = .idle
         lastUpdateTime = 0
+        lastFrameVehiclePosition = nil
         worldNode.isPaused = false
         gameplayNode.isPaused = false
         distanceScoreSystem.resetRun()
@@ -471,6 +493,7 @@ private extension GameScene {
 
         switch inputPhase {
         case .holding(let startLocation) where gameState == .waitingToStart:
+            playerEntity.idleVisual()
             playerEntity.attach(to: currentVehicleEntity)
             currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.onJumpRequested = { [weak self] in self?.forcePlayerToJump() }
             currentVehicleEntity.component(ofType: VehicleRageComponent.self)?.startRageCycle()
@@ -479,6 +502,7 @@ private extension GameScene {
             playerState = .riding
 
         case .holding(let startLocation) where gameState == .playing && playerState == .riding:
+            playerEntity.idleVisual()
             movementSystem.beginSteering(vehicle: currentVehicleEntity, at: startLocation)
 
         case .dragging where gameState == .playing && playerState == .riding:

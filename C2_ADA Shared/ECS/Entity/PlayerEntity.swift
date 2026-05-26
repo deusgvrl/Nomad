@@ -18,7 +18,7 @@ final class PlayerEntity: GKEntity {
 
     // MARK: - SpriteKit Node
 
-    let node: SKNode
+    let node: PlayerNode
 
 
     // MARK: - Placement Tuning
@@ -30,8 +30,7 @@ final class PlayerEntity: GKEntity {
     init(configuration: GameConfiguration) {
         self.rideOffset = configuration.playerRideOffset
 
-        let playerNode = Self.makePlayerNode(configuration: configuration)
-        playerNode.name = "player"
+        let playerNode = PlayerNode(configuration: configuration)
         playerNode.zPosition = RenderLayer.player
         self.node = playerNode
 
@@ -88,17 +87,23 @@ final class PlayerEntity: GKEntity {
         node.position = CGPoint(x: targetPos.x + rideOffset.dx, y: targetPos.y + rideOffset.dy)
     }
 
-    // MARK: - Player Art
-
-    private static func makePlayerNode(configuration: GameConfiguration) -> SKNode {
-        let playerNode = SKSpriteNode(imageNamed: NomadAsset.player.rawValue)
-        playerNode.size = configuration.playerSize
-
-        return playerNode
+    // MARK: - Visual Animation
+    
+    func playDeadVisual() {
+        node.playDead()
     }
     
-    // MARK: - Visual Animation
+    func steerVisual(isLeft: Bool) {
+        node.steer(isLeft: isLeft)
+    }
+    
+    func idleVisual() {
+        node.playIdle()
+    }
+    
     func playJumpVisual(duration: TimeInterval) {
+        node.playJump()
+        
         // MARK: Jump Visual Timing
         // Match the visual airborne timing to the lane movement duration so the
         // player does not return to normal size and appear to glide on the floor.
@@ -116,6 +121,7 @@ final class PlayerEntity: GKEntity {
     
     func cancelJumpVisual() {
         node.removeAllActions()
+        node.playIdle()
         
         let resetScale = SKAction.scale(to: 1.0, duration: 0.15)
         resetScale.timingMode = .easeOut

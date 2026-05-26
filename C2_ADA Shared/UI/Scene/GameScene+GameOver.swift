@@ -31,6 +31,8 @@ extension GameScene {
 
         gameState = .gameOver
         playerState = playerEndState
+        
+        playerEntity?.playDeadVisual()
 
         // MARK: Game Over Haptics Stop
         // Game Over freezes gameplay and overlays buttons, so any active rage
