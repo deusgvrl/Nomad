@@ -54,12 +54,23 @@ extension GameScene {
 
         let scoreResult = distanceScoreSystem.finishRun()
         guard playerEndState != .falling else {
-            showGameOverScreen(scoreResult: scoreResult)
+            // Jeda sebelum overlay muncul
+            let wait = SKAction.wait(forDuration: 0.8)
+            let showOverlay = SKAction.run { [weak self] in
+                self?.showGameOverScreen(scoreResult: scoreResult)
+            }
+            self.run(SKAction.sequence([wait, showOverlay]))
             return
         }
 
         settlePlayerForCrash { [weak self] in
-            self?.showGameOverScreen(scoreResult: scoreResult)
+            // Jeda sebelum overlay muncul
+
+            let wait = SKAction.wait(forDuration: 0.2)
+            let showOverlay = SKAction.run {
+                self?.showGameOverScreen(scoreResult: scoreResult)
+            }
+            self?.run(SKAction.sequence([wait, showOverlay]))
         }
     }
 

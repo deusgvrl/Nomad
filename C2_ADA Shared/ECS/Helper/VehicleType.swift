@@ -75,4 +75,44 @@ enum VehicleType: String, CaseIterable {
             
         }
     }
+    
+    // Posisi ban belakang relatif terhadap anchor point (0.5, 0.15)
+    var backWheelOffsets: [CGPoint] {
+        switch self {
+        case .car:
+            return [
+                CGPoint(x: -30, y: 5),   // Ban belakang kiri
+                CGPoint(x: 9, y: -5)   // Ban belakang kanan
+            ]
+
+        case .truck:
+            return [
+                CGPoint(x: -45, y: 3),
+                CGPoint(x: 12, y: -8)
+            ]
+
+        case .bus:
+            return [
+                CGPoint(x: -30, y: -5),
+                CGPoint(x: 5, y: -10)
+            ]
+        }
+    }
+    
+    // Skala partikel asap berdasarkan jenis kendaraan
+    var particleScale: CGFloat {
+        switch self {
+        case .car: return 0.18
+        case .truck: return 0.32
+        case .bus: return 0.15
+        }
+    }
+    
+    var particleSpeed: CGFloat {
+        switch self {
+        case .car: return 1
+        case .truck: return 0.2
+        case .bus: return 1 
+        }
+    }
 }

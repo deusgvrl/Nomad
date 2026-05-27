@@ -452,6 +452,8 @@ private extension GameScene {
               collisionSystem.checkCollision(vehicle: vehicle, with: obstacles) != nil else {
             return false
         }
+        (vehicle.node as? VehicleNode)?.playCrashSmoke()
+        audioController.play(.playerFalls) // Audio Crash tapi masih pake sound playerfalls
         enterGameOver(playerEndState: .crashed)
         return true
     }
@@ -461,6 +463,8 @@ private extension GameScene {
               collisionSystem.checkVehicleCollision(playerVehicle: vehicle, with: otherVehicles) != nil else {
             return false
         }
+        (vehicle.node as? VehicleNode)?.playCrashSmoke()
+        audioController.play(.playerFalls) // Audio Crash tapi masih pake sound playerfalls
         enterGameOver(playerEndState: .crashed)
         return true
     }

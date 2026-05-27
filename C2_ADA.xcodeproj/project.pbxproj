@@ -65,6 +65,10 @@
 				"Resources/Audio/Lands on Car_NOMAD.mp3",
 				"Resources/Audio/Player Falls_NOMAD.mp3",
 				"Resources/Audio/Player Jump_NOMAD.mp3",
+				Resources/CrashSmoke.sks,
+				Resources/MyParticle.sks,
+				Resources/PlayerFalls.sks,
+				Resources/VehicleParticle.sks,
 				State/GameState.swift,
 				State/ObstacleState.swift,
 				State/PlayerState.swift,
@@ -224,7 +228,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = L7P29889GM;
+				DEVELOPMENT_TEAM = AGBD4P9452;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -258,7 +262,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = L7P29889GM;
+				DEVELOPMENT_TEAM = AGBD4P9452;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
