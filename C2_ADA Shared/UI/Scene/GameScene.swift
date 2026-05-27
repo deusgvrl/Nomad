@@ -862,7 +862,7 @@ private extension GameScene {
                 hapticsController: self.hapticsController,
                 audioController: self.audioController
             )
-w            settings.onClosed = { [weak self] in self?.activeSettingsSource = nil }
+            settings.onClosed = { [weak self] in self?.activeSettingsSource = nil }
             settings.show(in: self)
         }
         menu.show(in: self, animated: animated)
