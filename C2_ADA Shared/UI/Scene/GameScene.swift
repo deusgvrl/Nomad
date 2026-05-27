@@ -468,80 +468,94 @@ private extension GameScene {
         enterGameOver(playerEndState: .crashed)
         return true
     }
-
+    
     func updateJumpingPlayer(_ deltaTime: TimeInterval) {
         guard let playerEntity else { return }
-
-        if playerState == .jumping {
+        if playerState == .jumping || playerState == .falling {
             let launchResult = launchSystem?.update(player: playerEntity, deltaTime: deltaTime)
-            let allVehicles = spawnSystem?.vehicleEntities ?? []
-            let activeVehicles = allVehicles.filter { $0 !== currentVehicleEntity }
             
-            // Mencari target: Dalam Tutorial 4, kita tunjukkan mobil terdekat di depan meskipun belum dalam jangkauan latch
-            var bestTarget: VehicleEntity?
-            if isShowingLatchTutorial {
-                bestTarget = activeVehicles
-                    .filter { $0.node.position.y > playerEntity.node.position.y }
-                    .min(by: { 
-                        let d1 = hypot($0.node.position.x - playerEntity.node.position.x, $0.node.position.y - playerEntity.node.position.y)
-                        let d2 = hypot($1.node.position.x - playerEntity.node.position.x, $1.node.position.y - playerEntity.node.position.y)
-                        return d1 < d2
-                    })
-            } else {
-                bestTarget = latchSystem?.getBestTarget(player: playerEntity, vehicles: activeVehicles)
-            }
+            if playerState == .jumping {
+                let allVehicles = spawnSystem?.vehicleEntities ?? []
+                let activeVehicles = allVehicles.filter { $0 !== currentVehicleEntity }
 
-            if let target = bestTarget {
+                var bestTarget: VehicleEntity?
                 if isShowingLatchTutorial {
-                    // Offset disesuaikan agar lebih maju dan pas di tengah mobil
-                    targetTutorialHighlightNode.position = CGPoint(
-                        x: target.node.position.x - 2,
-                        y: target.node.position.y + 35
-                    )
-                    
-                    if targetTutorialHighlightNode.alpha == 0 {
-                        targetTutorialHighlightNode.alpha = 1.0 // Langsung muncul 100%
-                    }
+                    let bestTutorialTarget = activeVehicles
+                        .filter { $0.node.position.y > playerEntity.node.position.y }
+                        .min(by: { 
+                            let d1 = hypot($0.node.position.x - playerEntity.node.position.x, $0.node.position.y - playerEntity.node.position.y)
+                            let d2 = hypot($1.node.position.x - playerEntity.node.position.x, $1.node.position.y - playerEntity.node.position.y)
+                            return d1 < d2
+                        })
+                    bestTarget = bestTutorialTarget
                 } else {
-                    // Pastikan highlight tutorial sembunyi jika bukan Tutorial 4
+                    bestTarget = latchSystem?.getBestTarget(player: playerEntity, vehicles: activeVehicles)
+                }
+                
+                if let target = bestTarget {
+                    if isShowingLatchTutorial {
+                        // Offset disesuaikan agar lebih maju dan pas di tengah mobil
+                        targetTutorialHighlightNode.position = CGPoint(
+                            x: target.node.position.x - 2,
+                            y: target.node.position.y + 35
+                        )
+                        
+                        if targetTutorialHighlightNode.alpha == 0 {
+                            targetTutorialHighlightNode.alpha = 1.0 // Langsung muncul 100%
+                        }
+                    } else {
+                        // Pastikan highlight tutorial sembunyi jika bukan Tutorial 4
                     if targetTutorialHighlightNode.alpha > 0 {
                         targetTutorialHighlightNode.alpha = 0
                     }
                 }
-
-                // Jangan timpa jika sedang dalam tutorial latch (yang lebih lambat)
+                    // Jangan timpa jika sedang dalam tutorial latch (yang lebih lambat)
                 if !isShowingLatchTutorial {
                     targetTimeScale = 0.6
+                    var currentLassoOffset = CGVector(dx: 0, dy: 40)
+                
+                    if let vehicleNode = target.node as? VehicleNode {
+                        currentLassoOffset = vehicleNode.vehicleType.lassoOffset
+                    }
                     
-                    // Hanya tampilkan reticle kuning standar jika BUKAN tutorial 4
-                    targetReticleNode.position = CGPoint(x: target.node.position.x, y: target.node.position.y + 40)
+                    targetReticleNode.position = CGPoint(
+                        x: target.node.position.x + currentLassoOffset.dx,
+                        y: target.node.position.y + currentLassoOffset.dy
+                    )
+                    
                     if targetReticleNode.alpha == 0 { targetReticleNode.run(SKAction.fadeAlpha(to: 1.0, duration: 0.15)) }
                 } else {
-                    // Pastikan reticle kuning sembunyi saat tutorial 4
-                    if targetReticleNode.alpha > 0 { targetReticleNode.alpha = 0 }
+                    if targetReticleNode.alpha > 0 {
+                        targetReticleNode.alpha = 0
+                    }
                 }
-            } else {
-                if targetTutorialHighlightNode.alpha > 0 {
-                    targetTutorialHighlightNode.alpha = 0
-                }
-
-                if !isShowingLatchTutorial {
-                    targetTimeScale = 1.0
+                } else {
+                    if targetTutorialHighlightNode.alpha > 0 {
+                        targetTutorialHighlightNode.alpha = 0
+                    }
+                    if !isShowingLatchTutorial {
+                        targetTimeScale = 1.0
+                    }
+                    if targetReticleNode.alpha > 0 {
+                        targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.15))
+                    }
                 }
                 
-                if targetReticleNode.alpha > 0 { targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.15)) }
-            }
-            
-            if currentTimeScale < 1.0 {
-                playerEntity.node.speed = 0.5
-            } else {
+                if currentTimeScale < 1.0 {
+                    playerEntity.node.speed = 0.5
+                } else {
+                    playerEntity.node.speed = 1.0
+                }
+            } else if playerState == .falling {
+                targetTimeScale = 1.0
                 playerEntity.node.speed = 1.0
             }
             
-            if launchResult == .fell {
-                enterFallGameOver()
-            }
-        } else {
+            
+        if launchResult == .fell {
+            enterFallGameOver()
+        }
+    } else {
             if targetTutorialHighlightNode.alpha > 0 {
                 targetTutorialHighlightNode.run(
                     SKAction.fadeAlpha(to: 0.0, duration: 0.15)
@@ -654,17 +668,21 @@ private extension GameScene {
             forcePlayerToJump()
 
         case .holding(let startLocation) where gameState == .playing && playerState == .jumping:
-            playerState = .latching
             let allVehicles = spawnSystem?.vehicleEntities ?? []
             let activeVehicles = allVehicles.filter { $0 !== currentVehicleEntity }
+            
             if let latchedVehicle = latchSystem?.attemptLatch(player: playerEntity, onto: activeVehicles) {
+                playerState = .latching
                 completeLatch(on: latchedVehicle, startLocation: startLocation)
-                
-            } else {
-                let failedLatchFallDistance = configuration.vehicleSize.height * 0.55
-                playerEntity.component(ofType: LaunchComponent.self)?.beginFailedLatchFall(from: playerEntity.node.position, direction: configuration.jumpForwardUnitVector, distance: failedLatchFallDistance, duration: configuration.playerFallSettleDuration)
-                playerState = .jumping
             }
+//            else {
+//                let failedLatchFallDistance = configuration.vehicleSize.height * 0.55
+//                playerEntity.component(ofType: LaunchComponent.self)?.beginFailedLatchFall(from: playerEntity.node.position, direction: configuration.jumpForwardUnitVector, distance: failedLatchFallDistance, duration: configuration.playerFallSettleDuration)
+//                
+//                playerState = .falling
+//                targetReticleNode.run(SKAction.fadeAlpha(to: 0.0, duration: 0.1))
+//            }
+            
         default: break
         }
     }
