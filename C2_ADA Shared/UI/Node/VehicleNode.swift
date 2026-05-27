@@ -13,6 +13,10 @@ class VehicleNode: SKSpriteNode {
     // Simpan tekstur asli agar mudah dikembalikan
     private let idleTexture: SKTexture
 
+    // TEMPLATE PARTIKEL: Muat dari file HANYA SATU KALI untuk menghemat memori dan CPU
+    private static let particleTemplate = SKEmitterNode(fileNamed: "VehicleParticle.sks")
+    private static let crashSmokeTemplate = SKEmitterNode(fileNamed: "CrashSmoke.sks")
+    
     init(type: VehicleType) {
         self.vehicleType = type
         self.idleTexture = SKTexture(imageNamed: type.idleAssetName)
@@ -29,9 +33,68 @@ class VehicleNode: SKSpriteNode {
 
         // Anchor point disesuaikan agar mobil "menempel" di atas tile (0.15 = dasar roda)
         self.anchorPoint = CGPoint(x: 0.5, y: 0.15)
+        
+        // Setelah self.anchorPoint = CGPoint(x: 0.5, y: 0.15)
+        setupParticles()
     }
+    
+    // MARK: - Particles Setup
+    
+    private func setupParticles() {
+        for offset in vehicleType.backWheelOffsets {
+            // Gunakan .copy() dari template, ini JAUH lebih cepat daripada membaca file .sks berulang kali
+            guard let template = VehicleNode.particleTemplate,
+                  let emitter = template.copy() as? SKEmitterNode else {
+                print("Failed to copy VehicleParticle from template")
+                continue
+            }
+            
+            emitter.position = offset
+            
+            emitter.zPosition = -1
+            
+            emitter.name = "wheelParticle"
+            
+            // Atur ukuran partikel berdasarkan jenis kendaraan
+            emitter.setScale(vehicleType.particleScale)
+            
+            // Atur speed particle menggunakan properti fisika internal partikel
+            let speedMultiplier = vehicleType.particleSpeed
+            
+            // Mengubah seberapa cepat partikel bergerak
+            emitter.particleSpeed = emitter.particleSpeed * speedMultiplier
+            
+            // Mengubah seberapa lama partikel hidup (jika geraknya pelan, umurnya harus lebih lama agar jarak tempuhnya sama)
+            emitter.particleLifetime = emitter.particleLifetime / speedMultiplier
+            
+            // Mengubah seberapa sering partikel muncul
+            emitter.particleBirthRate = emitter.particleBirthRate * speedMultiplier
+            
+            addChild(emitter)
+        }
+    }
+    
+    // MARK: - Crash Effects
 
+    func playCrashSmoke() {
+        guard let template = VehicleNode.crashSmokeTemplate,
+              let smoke = template.copy() as? SKEmitterNode else {
+            return
+        }
 
+        // Posisikan sesuai titik tabrakan, atau di tengah jika tidak diberikan
+        smoke.position = CGPoint(x: 0, y: 40)
+        smoke.zPosition = 9999 // Tepat di atas segalanya
+        smoke.setScale(0.3)
+        
+        addChild(smoke)
+
+        // Asap hilang setelah 3 detik
+        let wait = SKAction.wait(forDuration: 3.0)
+        let remove = SKAction.removeFromParent()
+        smoke.run(SKAction.sequence([wait, remove]))
+    }
+    
     // MARK: - Rage Animations
 
     /// Mengembalikan kendaraan ke kondisi Idle

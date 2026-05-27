@@ -17,6 +17,9 @@ final class PlayerNode: SKSpriteNode {
         SKTexture(imageNamed: NomadAsset.playerJump1.rawValue),
         SKTexture(imageNamed: NomadAsset.playerJump2.rawValue)
     ]
+    
+    // TEMPLATE PARTIKEL: Muat dari file HANYA SATU KALI
+    private static let fallSmokeTemplate = SKEmitterNode(fileNamed: "PlayerFalls.sks")
 
     init(configuration: GameConfiguration) {
         super.init(texture: idleTexture, color: .clear, size: configuration.playerSize)
@@ -46,6 +49,27 @@ final class PlayerNode: SKSpriteNode {
 
     func playDead() {
         removeAction(forKey: "jumpAnim")
-        texture = deadTexture
+        
+        // 1. Munculkan partikel asap jatuh
+        if let template = PlayerNode.fallSmokeTemplate,
+           let smoke = template.copy() as? SKEmitterNode {
+            
+            // Posisikan tepat di tengah sprite pemain
+            smoke.position = CGPoint.zero
+            smoke.zPosition = 1 
+            smoke.setScale(0.1)
+            addChild(smoke)
+            
+            let waitSmoke = SKAction.wait(forDuration: 2.0)
+            let removeSmoke = SKAction.removeFromParent()
+            smoke.run(SKAction.sequence([waitSmoke, removeSmoke]))
+        }
+        
+        // 2. Beri jeda sebentar lalu ganti tekstur
+        let waitTexture = SKAction.wait(forDuration: 0.2)
+        let changeTexture = SKAction.run { [weak self] in
+            self?.texture = self?.deadTexture
+        }
+        run(SKAction.sequence([waitTexture, changeTexture]))
     }
 }
