@@ -14,20 +14,25 @@ class GameViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let scene = GameScene.newGameScene()
-
-        // Present the scene
-        let skView = self.view as! SKView
-        skView.presentScene(scene)
+        guard let view = self.view as? SKView else {
+            return
+        }
         
-        skView.ignoresSiblingOrder = true
-        skView.showsFPS = true
-        skView.showsNodeCount = true
+        // MARK: Setup
+        let scene = GameScene(size: CGSize(width: 402, height: 874)) //Ukuran Iphone 17
+        scene.scaleMode = .aspectFill
+        
+        view.ignoresSiblingOrder = true
+        
+        view.showsFPS = true
+        view.showsNodeCount = true
+        view.showsPhysics = true
+        view.presentScene(scene) //navigate ke scenenya (GameScene) 
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         if UIDevice.current.userInterfaceIdiom == .phone {
-            return .allButUpsideDown
+            return .portrait
         } else {
             return .all
         }
